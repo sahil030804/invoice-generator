@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:ns1="http://schemas.android.com/tools">
-    <style name="Theme.KJInvoice" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/splash_bg</item>
-        <item name="android:windowSplashScreenBackground" ns1:targetApi="31">@color/splash_bg</item>
-        <item name="android:windowSplashScreenAnimatedIcon" ns1:targetApi="31">@drawable/app_logo</item>
-    </style>
-</resources>
