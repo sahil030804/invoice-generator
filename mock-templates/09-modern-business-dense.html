@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Stripe Style — 10-Item Single A4 Invoice</title>
+<style>
+  :root {
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --text-tertiary: #9ca3af;
+    --line: #e5e7eb;
+    --line-heavy: #111827;
+    --brand-accent: #0f766e; /* Calm, professional teal/emerald */
+    --brand-light: #f0fdfa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+    background: #cbd5e1;
+    color: var(--text-primary);
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 30px 10px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Screen preview helper */
+  .a4-banner {
+    width: 210mm;
+    margin: 0 auto 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: #475569;
+    font-weight: 600;
+  }
+  .a4-tag {
+    background: var(--brand-accent);
+    color: #ffffff;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Physical A4 Sheet */
+  .sheet {
+    width: 210mm;
+    height: 297mm;
+    max-height: 297mm;
+    margin: 0 auto;
+    background: #ffffff;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .page {
+    padding: 16mm 18mm 14mm;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .company-name {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.4px;
+  }
+
+  .company-details {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    line-height: 1.45;
+  }
+
+  .invoice-meta {
+    text-align: right;
+  }
+
+  .meta-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--brand-accent);
+  }
+
+  .meta-invoice-num {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-top: 2px;
+  }
+
+  .meta-dates {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  /* Client & Details Bar */
+  .client-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin: 14px 0 10px;
+  }
+
+  .client-info {
+    max-width: 60%;
+  }
+
+  .subheading {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+  }
+
+  .client-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .client-sub {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    margin-top: 2px;
+  }
+
+  .payment-terms-box {
+    text-align: right;
+    font-size: 11.5px;
+    color: var(--text-secondary);
+  }
+
+  .payment-terms-box strong {
+    color: var(--text-primary);
+  }
+
+  /* Table: Clean 5-Columns */
+  table.items {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6px;
+  }
+
+  table.items thead th {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-secondary);
+    text-align: right;
+    padding: 8px 6px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1.5px solid var(--line-heavy);
+    white-space: nowrap;
+  }
+
+  table.items thead th.col-desc { text-align: left; padding-left: 2px; }
+  table.items thead th.col-num { text-align: center; width: 26px; padding-left: 0; }
+  table.items thead th.col-total { padding-right: 2px; }
+
+  table.items tbody td {
+    padding: 7px 6px;
+    text-align: right;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--line);
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  table.items tbody td.col-num {
+    text-align: center;
+    color: var(--text-tertiary);
+    padding-left: 0;
+  }
+
+  table.items tbody td.col-desc {
+    text-align: left;
+    padding-left: 2px;
+  }
+
+  table.items tbody td.col-total {
+    padding-right: 2px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .item-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-primary);
+  }
+
+  .item-meta {
+    font-size: 10.5px;
+    color: var(--text-secondary);
+    margin-top: 1px;
+  }
+
+  /* Bottom Split */
+  .bottom-split {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 32px;
+    margin-top: 12px;
+  }
+
+  .bottom-left {
+    flex: 1.2;
+  }
+
+  .bank-card {
+    background: #f9fafb;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+
+  .qr-box {
+    width: 44px;
+    height: 44px;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 2px;
+    flex-shrink: 0;
+  }
+
+  .qr-box svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .bank-info {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+  }
+
+  .bank-info strong {
+    color: var(--text-primary);
+  }
+
+  .in-words {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  .in-words strong {
+    color: var(--text-primary);
+  }
+
+  .note-text {
+    margin-top: 8px;
+    font-size: 9.5px;
+    color: var(--text-tertiary);
+    line-height: 1.35;
+  }
+
+  .bottom-right {
+    flex: 1;
+    max-width: 280px;
+  }
+
+  table.totals-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  table.totals-table td {
+    padding: 3.5px 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  table.totals-table td:first-child {
+    text-align: left;
+    color: var(--text-secondary);
+  }
+
+  table.totals-table td:last-child {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  table.totals-table tr.disc td:last-child {
+    color: var(--brand-accent);
+  }
+
+  table.totals-table tr.grand {
+    border-top: 2px solid var(--text-primary);
+    border-bottom: 2px solid var(--text-primary);
+  }
+
+  table.totals-table tr.grand td {
+    padding: 8px 0;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--brand-accent);
+  }
+
+  table.totals-table tr.grand td:first-child {
+    color: var(--text-primary);
+  }
+
+  .sign-wrapper {
+    text-align: right;
+    margin-top: 22px;
+  }
+
+  .sign-line {
+    border-top: 1px solid var(--text-primary);
+    width: 160px;
+    margin-left: auto;
+    padding-top: 4px;
+    text-align: center;
+  }
+
+  .sign-line strong {
+    display: block;
+    font-size: 11px;
+    color: var(--text-primary);
+  }
+
+  .sign-line small {
+    font-size: 9.5px;
+    color: var(--text-secondary);
+  }
+
+  /* Print Media */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  @media print {
+    html, body {
+      background: #ffffff;
+      padding: 0;
+      margin: 0;
+      width: 210mm;
+      height: 297mm;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .a4-banner { display: none !important; }
+    .sheet {
+      width: 210mm;
+      height: 297mm;
+      box-shadow: none;
+      border: none;
+      page-break-after: avoid;
+      overflow: hidden;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Screen Helper -->
+  <div class="a4-banner">
+    <div>A4 Sheet: <strong>210 mm × 297 mm</strong> (Stripe Minimalist, Clean &amp; Readable)</div>
+    <div class="a4-tag">STRIPE MINIMALIST • 10 PRODUCTS</div>
+  </div>
+
+  <div class="sheet">
+    <div class="page">
+
+      <!-- TOP SECTION -->
+      <div>
+        <div class="header">
+          <div>
+            <div class="company-name">KJ Enterprises</div>
+            <div class="company-details">
+              22, MG Road, Bengaluru, Karnataka 560001<br>
+              GSTIN: <strong>29ABCDE1234F1Z5</strong> &nbsp;•&nbsp; Phone: +91 98765 43210
+            </div>
+          </div>
+          <div class="invoice-meta">
+            <div class="meta-title">Tax Invoice</div>
+            <div class="meta-invoice-num">INV-2026-0141</div>
+            <div class="meta-dates">Date: <strong>19 Sep 2026</strong> &nbsp;|&nbsp; Due: <strong>26 Sep 2026</strong></div>
+          </div>
+        </div>
+
+        <div class="client-bar">
+          <div class="client-info">
+            <div class="subheading">Billed To</div>
+            <div class="client-name">Sharma Traders</div>
+            <div class="client-sub">
+              14, 100 Ft Road, Indiranagar, Bengaluru 560038<br>
+              GSTIN: <strong>29ABCDE1234F1Z5</strong> &nbsp;•&nbsp; Phone: +91 99880 11223
+            </div>
+          </div>
+          <div class="payment-terms-box">
+            <div class="subheading">Invoice Terms</div>
+            Place of Supply: <strong>Karnataka (29)</strong><br>
+            Payment Terms: <strong>Net 7 Days</strong>
+          </div>
+        </div>
+
+        <!-- 5-Column Clean Items Table -->
+        <table class="items">
+          <thead>
+            <tr>
+              <th class="col-num">#</th>
+              <th class="col-desc">Item &amp; Description</th>
+              <th style="width: 70px;">Qty</th>
+              <th style="width: 100px;">Rate (₹)</th>
+              <th class="col-total" style="width: 110px;">Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="col-num">1</td>
+              <td class="col-desc">
+                <div class="item-title">Stainless Steel Pressure Cooker 5L</div>
+                <div class="item-meta">HSN: 7323 &nbsp;•&nbsp; Induction base &nbsp;•&nbsp; GST 18%</div>
+              </td>
+              <td>2 NOS</td>
+              <td>1,850.00</td>
+              <td class="col-total">3,700.00</td>
+            </tr>
+            <tr>
+              <td class="col-num">2</td>
+              <td class="col-desc">
+                <div class="item-title">Non-Stick Cookware Set (3 Pc)</div>
+                <div class="item-meta">HSN: 7323 &nbsp;•&nbsp; Tawa, Pan, Kadai &nbsp;•&nbsp; GST 18%</div>
+              </td>
+              <td>3 SET</td>
+              <td>1,499.00</td>
+              <td class="col-total">4,497.00</td>
+            </tr>
+            <tr>
+              <td class="col-num">3</td>
+              <td class="col-desc">
+                <div class="item-title">Induction Cooktop 2000W</div>
+                <div class="item-meta">HSN: 8516 &nbsp;•&nbsp; Auto shutoff &nbsp;•&nbsp; GST 18%</div>
+              </td>
+              <td>1 NOS</td>
+              <td>2,799.00</td>
+              <td class="col-total">2,799.00</td>
+            </tr>
+            <tr>
+              <td class="col-num">4</td>
+              <td class="col-desc">
+                <div class="item-title">Electric Kettle 1.8L Stainless</div>
+                <div class="item-meta">HSN: 8516 &nbsp;•&nbsp; Boil-dry protection &nbsp;•&nbsp; GST 18%</div>
+              </td>
+              <td>4 NOS</td>
+              <td>649.00</td>
+              <td class="col-total">2,596.00</td>
+            </tr>
+            <tr>
+              <td class="col-num">5</td>
+              <td class="col-desc">
+                <div class="item-title">Kitchen Chef Knife Set (4 Pc)</div>
+                <div class="item-meta">HSN: 8211 &nbsp;•&nbsp; Carbon steel &nbsp;•&nbsp; GST 12%</div>
+              </td>
+              <td>5 SET</td>
+              <td>499.00</td>
+              <td class="col-total">2,495.00</td>
+            </tr>
+            <tr>
+              <td class="col-num">6</td>
+              <td class="col-desc">
+                <div class="item-title">Mixer Grinder 750W Heavy Duty</div>
+                <div class="item-meta">HSN: 8509 &nbsp;•&nbsp; 3 SS jars, copper motor &nbsp;•&nbsp; GST 18%</div>
+              </td>
+              <td>2 NOS</td>
+              <td>2,450.00</td>
+              <td class="col-total">4,900.00</td>
+            </tr>
+            <tr>
+              <td class="col-num">7</td>
+              <td class="col-desc">
+                <div class="item-title">Airtight Spice Container Set</div>
+                <div class="item-meta">HSN: 3924 &nbsp;•&nbsp; 6 Pc modular canisters &nbsp;•&nbsp; GST 12%</div>
+              </td>
+              <td>8 SET</td>
+              <td>320.00</td>
+              <td class="col-total">2,560.00</td>
+            </tr>
+            <tr>
+              <td class="col-num">8</td>
+              <td class="col-desc">
+                <div class="item-title">Hard Anodised Roti Tawa 25cm</div>
+                <div class="item-meta">HSN: 7323 &nbsp;•&nbsp; 4mm heavy gauge base &nbsp;•&nbsp; GST 18%</div>
+              </td>
+              <td>6 NOS</td>
+              <td>580.00</td>
+              <td class="col-total">3,480.00</td>
+            </tr>
+            <tr>
+              <td class="col-num">9</td>
+              <td class="col-desc">
+                <div class="item-title">Stainless Steel Cutlery Set</div>
+                <div class="item-meta">HSN: 8215 &nbsp;•&nbsp; 24 Pc dining set with stand &nbsp;•&nbsp; GST 12%</div>
+              </td>
+              <td>2 SET</td>
+              <td>890.00</td>
+              <td class="col-total">1,780.00</td>
+            </tr>
+            <tr>
+              <td class="col-num">10</td>
+              <td class="col-desc">
+                <div class="item-title">Insulated Water Bottle 1000ml</div>
+                <div class="item-meta">HSN: 7323 &nbsp;•&nbsp; Double-wall stainless steel &nbsp;•&nbsp; GST 18%</div>
+              </td>
+              <td>10 NOS</td>
+              <td>350.00</td>
+              <td class="col-total">3,500.00</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- BOTTOM SECTION -->
+      <div>
+        <div class="bottom-split">
+          <div class="bottom-left">
+            <div class="bank-card">
+              <div class="qr-box">
+                <svg viewBox="0 0 24 24" fill="#111827"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 2h2v3h-2v-3zm3 3h3v3h-3v-3zm-5 1h2v2h-2v-2zm3-3h2v2h-2v-2z"/></svg>
+              </div>
+              <div class="bank-info">
+                <strong>HDFC Bank</strong> &nbsp;•&nbsp; A/C: <strong>5010 0234 5678 9123</strong> &nbsp;•&nbsp; IFSC: <strong>HDFC0001234</strong><br>
+                UPI: <strong>kj@hdfcbank</strong> &nbsp;•&nbsp; Branch: MG Road, Bengaluru
+              </div>
+            </div>
+
+            <div class="in-words">
+              <strong>Amount in Words:</strong><br>
+              Thirty-Seven Thousand Nine Hundred Ninety-Seven Rupees Only.
+            </div>
+
+            <div class="note-text">
+              Goods once sold are not returnable. Payment due within 7 days.<br>
+              Thank you for choosing KJ Enterprises!
+            </div>
+          </div>
+
+          <div class="bottom-right">
+            <table class="totals-table">
+              <tr>
+                <td>Subtotal:</td>
+                <td>₹32,307.00</td>
+              </tr>
+              <tr class="disc">
+                <td>Discount:</td>
+                <td>−₹1,825.00</td>
+              </tr>
+              <tr>
+                <td>Taxable Value:</td>
+                <td>₹30,482.00</td>
+              </tr>
+              <tr>
+                <td>CGST + SGST (Tax):</td>
+                <td>₹5,095.00</td>
+              </tr>
+              <tr class="grand">
+                <td>Total Due:</td>
+                <td>₹35,577.00</td>
+              </tr>
+            </table>
+
+            <div class="sign-wrapper">
+              <div class="sign-line">
+                <strong>For KJ Enterprises</strong>
+                <small>Authorised Signatory</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

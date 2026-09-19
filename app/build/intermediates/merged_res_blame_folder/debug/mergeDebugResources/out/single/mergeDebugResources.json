@@ -1,0 +1,110 @@
+[
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/mipmap-hdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/drawable_ic_launcher.xml.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/drawable/ic_launcher.xml"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/mipmap-xxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.kjbilling.app-debug-57:/mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "com.kjbilling.app-main-59:/mipmap-mdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/mipmap-mdpi_ic_launcher.png.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/mipmap-mdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/mipmap-xxxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/mipmap-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/mipmap-xhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.kjbilling.app-debug-57:/mipmap-mdpi_ic_launcher.png.flat",
+        "source": "com.kjbilling.app-main-59:/mipmap-mdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.kjbilling.app-debug-57:/mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "com.kjbilling.app-main-59:/mipmap-xhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.kjbilling.app-debug-57:/mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "com.kjbilling.app-main-59:/mipmap-xxxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.kjbilling.app-debug-57:/mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "com.kjbilling.app-main-59:/mipmap-xxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.kjbilling.app-debug-57:/mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "com.kjbilling.app-main-59:/mipmap-xhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.kjbilling.app-debug-57:/drawable_app_logo.png.flat",
+        "source": "com.kjbilling.app-main-59:/drawable/app_logo.png"
+    },
+    {
+        "merged": "com.kjbilling.app-debug-57:/mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "com.kjbilling.app-main-59:/mipmap-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.kjbilling.app-debug-57:/drawable_ic_launcher.png.flat",
+        "source": "com.kjbilling.app-main-59:/drawable/ic_launcher.png"
+    },
+    {
+        "merged": "com.kjbilling.app-debug-57:/mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "com.kjbilling.app-main-59:/mipmap-xxxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/drawable_ic_launcher.png.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/drawable/ic_launcher.png"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/mipmap-xhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/xml_file_paths.xml.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/xml/file_paths.xml"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/mipmap-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.kjbilling.app-debug-57:/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "com.kjbilling.app-main-59:/mipmap-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/mipmap-xxxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/mipmap-mdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/xml_data_extraction_rules.xml.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.kjbilling.app-debug-57:/mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "com.kjbilling.app-main-59:/mipmap-hdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-debug-57:/xml_backup_rules.xml.flat",
+        "source": "/home/sahil/.gradle/daemon/8.7/com.kjbilling.app-main-59:/xml/backup_rules.xml"
+    }
+]

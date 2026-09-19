@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Professional — Invoice Template</title>
+<style>
+  :root {
+    --ink: #111827;        /* primary text */
+    --muted: #6b7280;      /* secondary text */
+    --faint: #9ca3af;      /* labels */
+    --rule: #e5e7eb;       /* hairline rules */
+    --strong: #111827;     /* table header rule */
+    --accent: #1d4ed8;     /* single accent */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    background: #eef0f3;
+    padding: 28px;
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .sheet {
+    max-width: 720px;
+    margin: 0 auto 32px;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(17,24,39,.10);
+  }
+  .page { padding: 44px 46px 36px; }
+
+  /* ---------- Header ---------- */
+  .head { display: flex; justify-content: space-between; align-items: flex-start; }
+  .head .id {
+    font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--faint); font-weight: 700;
+  }
+  .head h1 { font-size: 24px; letter-spacing: .2px; margin-top: 6px; }
+  .head .contact { font-size: 12.5px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+  .head .right { text-align: right; }
+  .head .right .doc { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .head .right .no { font-size: 22px; font-weight: 700; margin-top: 4px; letter-spacing: .3px; }
+  .head .right .date { font-size: 12.5px; color: var(--muted); margin-top: 5px; }
+  .rule { height: 1px; background: var(--strong); margin-top: 22px; }
+
+  /* ---------- Parties + Meta ---------- */
+  .meta { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; margin-top: 20px; }
+  .label { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--faint); font-weight: 700; }
+  .party h2 { font-size: 15px; margin-top: 7px; }
+  .party p { font-size: 12.5px; color: var(--muted); margin-top: 5px; line-height: 1.6; }
+  .party .gstin { color: var(--ink); }
+  .kvt { list-style: none; margin-top: 7px; }
+  .kvt li { display: flex; justify-content: space-between; align-items: baseline; font-size: 12.5px; padding: 3px 0; }
+  .kvt li span:first-child { color: var(--muted); }
+  .kvt li span:last-child { font-weight: 600; text-align: right; }
+
+  /* ---------- Items table ---------- */
+  .items { margin-top: 24px; }
+  table.grid { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.grid thead th {
+    text-align: right; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--faint); font-weight: 700; white-space: nowrap;
+    padding: 0 8px 9px; border-bottom: 1px solid var(--strong);
+  }
+  table.grid thead th:first-child { text-align: left; padding-left: 0; }
+  table.grid thead th:last-child { padding-right: 0; }
+  table.grid tbody td {
+    padding: 9px 8px 9px 0; text-align: right; vertical-align: top;
+    border-bottom: 1px solid var(--rule);
+    font-variant-numeric: tabular-nums;
+  }
+  table.grid tbody td:first-child { padding-left: 0; }
+  table.grid tbody td:last-child { padding-right: 0; }
+  table.grid tbody td.desc { text-align: left; }
+  table.grid .desc strong { display: block; font-size: 12px; font-weight: 600; }
+  table.grid .desc small { display: block; color: var(--faint); margin-top: 1px; font-size: 11px; }
+  table.grid tbody tr:last-child td { border-bottom: 0; }
+  table.grid tbody td.total { font-weight: 700; }
+  /* fixed, aligned column widths */
+  col.num1 { width: 22px; }  /* #   */
+  col.nsn  { width: 42px; }  /* HSN */
+  col.qty  { width: 30px; }  /* Qty */
+  col.rate { width: 66px; }  /* Rate */
+  col.disc { width: 46px; }  /* Disc */
+  col.tax  { width: 76px; }  /* Taxable */
+  col.gst  { width: 42px; }  /* GST % */
+  col.tot  { width: 82px; }  /* Total */
+
+  /* ---------- HSN summary + Totals ---------- */
+  .lower { display: grid; grid-template-columns: 1fr 300px; gap: 28px; margin-top: 22px; }
+  table.hsn { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.hsn thead th {
+    text-align: right; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--faint); font-weight: 700; padding: 0 6px 7px; border-bottom: 1px solid var(--rule); white-space: nowrap;
+  }
+  table.hsn thead th:first-child { text-align: left; padding-left: 0; }
+  table.hsn tbody td { padding: 6px 6px 6px 0; text-align: right; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--rule); }
+  table.hsn tbody td:first-child { text-align: left; padding-left: 0; font-weight: 600; }
+  table.hsn tbody td:last-child { padding-right: 0; }
+  table.hsn tbody tr:last-child td { border-bottom: 0; }
+  table.total { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.total td { padding: 5.5px 0; text-align: right; font-variant-numeric: tabular-nums; }
+  table.total tr td:first-child { text-align: left; color: var(--muted); }
+  table.total tr.grand td {
+    border-top: 2px solid var(--strong); margin-top: 4px; padding-top: 10px;
+    font-size: 15px; font-weight: 700; color: var(--ink);
+  }
+  table.total tr.grand td:first-child { color: var(--ink); }
+  table.total tr.last { border-bottom: 1px solid var(--strong); }
+  .words { margin-top: 14px; display: flex; gap: 6px; font-size: 12px; color: var(--muted); }
+  .words strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Notes + Signature ---------- */
+  .bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; margin-top: 28px; padding-top: 0; }
+  .notes { max-width: 62%; font-size: 12px; color: var(--muted); line-height: 1.7; }
+  .notes p { margin-top: 4px; }
+  .notes .bank { margin-top: 10px; color: var(--ink); }
+  .signature { text-align: center; }
+  .sig-area { width: 190px; height: 64px; }
+  .sig-line { width: 190px; border-top: 1.5px solid var(--strong); padding-top: 8px; font-size: 12px; }
+  .sig-line strong { display: block; font-weight: 700; }
+  .sig-line small { color: var(--faint); font-size: 11px; }
+
+  /* ---------- Footer ---------- */
+  footer { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; font-size: 10.5px; color: var(--faint); letter-spacing: .3px; }
+
+  @media print {
+    @page { size: A4; margin: 0; }
+    body { background: #fff; padding: 0; }
+    .sheet { box-shadow: none; margin: 0; max-width: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="page">
+
+      <!-- Header -->
+      <div class="head">
+        <div>
+          <div class="id">GST Registered &nbsp;•&nbsp; Since 2012</div>
+          <h1>KJ Enterprises</h1>
+          <div class="contact">22, MG Road, Bengaluru, Karnataka 560001<br>+91 98765 43210 &nbsp;·&nbsp; accounts@kjenterprises.in</div>
+        </div>
+        <div class="right">
+          <div class="doc">Tax Invoice</div>
+          <div class="no">INV-2026-0141</div>
+          <div class="date">19 Sept 2026</div>
+        </div>
+      </div>
+      <div class="rule"></div>
+
+      <!-- Parties + Meta -->
+      <div class="meta">
+        <div class="party">
+          <div class="label">Billed To</div>
+          <h2>Sharma Traders</h2>
+          <p>14, 100 Ft Road, Indiranagar<br>Bengaluru, Karnataka 560038<br>+91 99880 11223</p>
+        </div>
+        <div class="party">
+          <div class="label">Invoice Details</div>
+          <ul class="kvt">
+            <li><span>Invoice Date</span><span>19 Sept 2026</span></li>
+            <li><span>Due Date</span><span>26 Sept 2026</span></li>
+            <li><span>Place of Supply</span><span>Karnataka (29)</span></li>
+            <li><span class="gstin">Buyer GSTIN</span><span>29ABCDE1234F1Z5</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Items -->
+      <div class="items">
+        <table class="grid">
+          <colgroup>
+            <col class="num1"><col class="desc"><col class="nsn"><col class="qty">
+            <col class="rate"><col class="disc"><col class="tax"><col class="gst"><col class="tot">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>#</th><th>Item Description</th><th>HSN</th><th>Qty</th>
+              <th>Rate</th><th>Disc</th><th>Taxable</th><th>GST</th><th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td class="desc"><strong>Premium Steel Cookware</strong><small>5 pc stainless steel set — nonstick</small></td><td>7323</td><td>3</td><td>2,499.00</td><td>10%</td><td>6,747.30</td><td>18%</td><td class="total">7,961.81</td></tr>
+            <tr><td>2</td><td class="desc"><strong>Induction Cooktop</strong><small>2000W, preset menu</small></td><td>8516</td><td>2</td><td>3,299.00</td><td>5%</td><td>6,268.10</td><td>18%</td><td class="total">7,396.36</td></tr>
+            <tr><td>3</td><td class="desc"><strong>Nonstick Tawa</strong><small>28 cm, extra hard anodised</small></td><td>7323</td><td>5</td><td>749.00</td><td>—</td><td>3,745.00</td><td>18%</td><td class="total">4,419.10</td></tr>
+            <tr><td>4</td><td class="desc"><strong>Kitchen Knife Set</strong><small>4 pc carbon steel + block</small></td><td>8211</td><td>4</td><td>1,199.00</td><td>10%</td><td>4,316.40</td><td>12%</td><td class="total">4,834.37</td></tr>
+            <tr><td>5</td><td class="desc"><strong>Mixer Grinder</strong><small>750W, 3 jars, copper motor</small></td><td>8509</td><td>1</td><td>2,999.00</td><td>15%</td><td>2,549.15</td><td>18%</td><td class="total">3,008.00</td></tr>
+            <tr><td>6</td><td class="desc"><strong>Storage Containers</strong><small>Set of 6, airtight</small></td><td>3924</td><td>6</td><td>399.00</td><td>—</td><td>2,394.00</td><td>12%</td><td class="total">2,681.28</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- HSN summary + Totals -->
+      <div class="lower">
+        <div>
+          <div class="label">Tax Summary by HSN</div>
+          <table class="hsn" style="margin-top:8px">
+            <thead><tr><th>HSN</th><th>Rate</th><th>Taxable</th><th>Tax</th><th>Total</th></tr></thead>
+            <tbody>
+              <tr><td>7323</td><td>18%</td><td>10,492.30</td><td>1,888.61</td><td>12,380.91</td></tr>
+              <tr><td>8516</td><td>18%</td><td>6,268.10</td><td>1,128.26</td><td>7,396.36</td></tr>
+              <tr><td>8211</td><td>12%</td><td>4,316.40</td><td>517.97</td><td>4,834.37</td></tr>
+              <tr><td>8509</td><td>18%</td><td>2,549.15</td><td>458.85</td><td>3,008.00</td></tr>
+              <tr><td>3924</td><td>12%</td><td>2,394.00</td><td>287.28</td><td>2,681.28</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <table class="total">
+            <tr><td>Gross Amount</td><td>₹30,300.92</td></tr>
+            <tr><td>Discount</td><td>−₹2,009.05</td></tr>
+            <tr><td>Taxable Value</td><td>₹26,019.95</td></tr>
+            <tr><td>CGST @ 9%</td><td>₹2,140.50</td></tr>
+            <tr class="last"><td>SGST @ 9%</td><td>₹2,140.47</td></tr>
+            <tr class="grand"><td>Grand Total</td><td>₹30,300.92</td></tr>
+          </table>
+          <div class="words"><strong>In words:</strong> Thirty Thousand Three Hundred Rupees and Ninety Two Paise Only</div>
+        </div>
+      </div>
+
+      <!-- Notes + Signature -->
+      <div class="bottom">
+        <div class="notes">
+          <div class="label">Notes &amp; Terms</div>
+          <p>1. Goods once sold shall not be taken back or exchanged.</p>
+          <p>2. Payment due within 7 days of invoice date.</p>
+          <p>3. We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.</p>
+          <div class="bank">Bank: HDFC &nbsp;•&nbsp; A/C 5010 0234 5678 9123 &nbsp;•&nbsp; IFSC HDFC0001234</div>
+        </div>
+        <div class="signature">
+          <div class="sig-area"></div>
+          <div class="sig-line">
+            <strong>For KJ Enterprises</strong>
+            <small>Authorised Signatory — Karan Jain</small>
+          </div>
+        </div>
+      </div>
+
+      <footer><span>This is a computer-generated invoice.</span><span>Page 1 of 1</span></footer>
+    </div>
+  </div>
+</body>
+</html>

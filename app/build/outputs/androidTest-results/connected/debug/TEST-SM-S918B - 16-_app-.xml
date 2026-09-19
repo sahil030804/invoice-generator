@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.kjbilling.app.ElectricShopSeedAndGenerateTest" tests="1" failures="0" errors="0" skipped="0" time="1.127" timestamp="2026-09-19T17:56:51" hostname="localhost">
+  <properties>
+    <property name="device" value="SM-S918B - 16" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="seedElectricShopDataAndGenerateInvoices" classname="com.kjbilling.app.ElectricShopSeedAndGenerateTest" time="0.324" />
+</testsuite>

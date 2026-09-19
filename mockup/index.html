@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Template Gallery &amp; Mockup Previewer</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-light: #334155;
+    --text-light: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: #334155;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-light);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Top Navigation Bar */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-badge {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 800;
+    font-size: 14px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    letter-spacing: 0.5px;
+  }
+  h1 {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .view-mode-btn {
+    background: var(--surface-light);
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+  .view-mode-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+
+  /* Main Workspace Layout */
+  .workspace {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Sidebar with Templates */
+  aside {
+    width: 340px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .sidebar-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    padding: 0 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .template-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .template-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+  }
+  .template-card.active {
+    border-color: var(--primary);
+    background: rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 1px var(--primary);
+  }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  .template-number {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--primary);
+    background: rgba(37, 99, 235, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .badge-tag {
+    font-size: 10px;
+    font-weight: 700;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .badge-tag.highlight {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.18);
+  }
+  .badge-tag.existing {
+    color: #94a3b8;
+    background: rgba(148, 163, 184, 0.15);
+  }
+  .template-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-light);
+    margin-bottom: 3px;
+  }
+  .template-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.35;
+  }
+
+  /* Preview Container */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #cbd5e1;
+    overflow: hidden;
+    position: relative;
+  }
+  .preview-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+  }
+  .preview-info {
+    color: var(--text-muted);
+  }
+  .preview-info strong {
+    color: var(--text-light);
+  }
+  .preview-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .iframe-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  iframe {
+    width: 100%;
+    max-width: 900px;
+    height: 100%;
+    min-height: 980px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    background: #fff;
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <div class="logo-badge">KJ INVOICE</div>
+      <h1>Invoice Mockup Templates Showcase</h1>
+    </div>
+    <div class="header-right">
+      <a id="openNewTab" href="08-compact-a4-single-page.html" target="_blank" class="view-mode-btn">
+        <span>↗ Open in New Tab</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <!-- Sidebar -->
+    <aside>
+      <div class="sidebar-title">
+        <span>10-Product A4 Single-Page</span>
+        <span style="color:#f59e0b">Recommended</span>
+      </div>
+
+      <div class="template-card active" onclick="loadTemplate('08-compact-a4-single-page.html', this)">
+        <div class="card-top">
+          <span class="template-number">08</span>
+          <span class="badge-tag highlight">★ Simple &amp; Easy (5 Cols)</span>
+        </div>
+        <div class="template-name">Clean &amp; Easy 5-Column</div>
+        <div class="template-desc">Clean, human-friendly 5-column table. HSN &amp; GST inline, large 12px readable fonts, effortless single A4 page.</div>
+      </div>
+
+      <div class="template-card" onclick="loadTemplate('09-modern-business-dense.html', this)">
+        <div class="card-top">
+          <span class="template-number">09</span>
+          <span class="badge-tag highlight">★ Simple &amp; Easy (5 Cols)</span>
+        </div>
+        <div class="template-name">Stripe Minimalist</div>
+        <div class="template-desc">Minimalist layout inspired by Stripe billing. 5 clear columns, high contrast, prominent total, zero clutter.</div>
+      </div>
+
+      <div class="sidebar-title" style="margin-top: 10px;">
+        <span>Standard Mockup Designs (5–6 Items)</span>
+      </div>
+
+      <div class="template-card" onclick="loadTemplate('00-simple-professional.html', this)">
+        <div class="card-top">
+          <span class="template-number">00</span>
+          <span class="badge-tag existing">Existing</span>
+        </div>
+        <div class="template-name">Simple Professional</div>
+        <div class="template-desc">Clean, minimalist monochrome layout with blue accent and tabular alignment.</div>
+      </div>
+
+      <div class="template-card" onclick="loadTemplate('01-classic-corporate.html', this)">
+        <div class="card-top">
+          <span class="template-number">01</span>
+          <span class="badge-tag existing">Existing</span>
+        </div>
+        <div class="template-name">Classic Corporate</div>
+        <div class="template-desc">Navy header, brand badge, zebra striped item rows, and structured boxes.</div>
+      </div>
+
+      <div class="template-card" onclick="loadTemplate('02-modern-minimal-slate.html', this)">
+        <div class="card-top">
+          <span class="template-number">02</span>
+          <span class="badge-tag">Modern</span>
+        </div>
+        <div class="template-name">Modern Minimal Slate</div>
+        <div class="template-desc">Tech &amp; SaaS look. Slate palette, pill badges, card containers, and UPI QR code.</div>
+      </div>
+
+      <div class="template-card" onclick="loadTemplate('03-compact-retail-pos.html', this)">
+        <div class="card-top">
+          <span class="template-number">03</span>
+          <span class="badge-tag">Retail / POS</span>
+        </div>
+        <div class="template-name">Compact Retail &amp; POS</div>
+        <div class="template-desc">High-density wholesale &amp; retail grid. Fits multiple items with low ink consumption.</div>
+      </div>
+
+      <div class="template-card" onclick="loadTemplate('04-elegant-serif.html', this)">
+        <div class="card-top">
+          <span class="template-number">04</span>
+          <span class="badge-tag existing">Existing</span>
+        </div>
+        <div class="template-name">Elegant Serif</div>
+        <div class="template-desc">Luxury cream and warm gold palette with Georgia serif typography and dotted rules.</div>
+      </div>
+
+      <div class="template-card" onclick="loadTemplate('05-bold-industrial.html', this)">
+        <div class="card-top">
+          <span class="template-number">05</span>
+          <span class="badge-tag">Industrial</span>
+        </div>
+        <div class="template-name">Bold Industrial &amp; Logistics</div>
+        <div class="template-desc">Heavy industry, construction &amp; transport. Features E-Way Bill, Vehicle No &amp; amber accents.</div>
+      </div>
+
+      <div class="template-card" onclick="loadTemplate('06-creative-studio.html', this)">
+        <div class="card-top">
+          <span class="template-number">06</span>
+          <span class="badge-tag">Studio</span>
+        </div>
+        <div class="template-name">Creative Studio &amp; Agency</div>
+        <div class="template-desc">Emerald &amp; stone palette, editorial styling, deliverables table and project particulars.</div>
+      </div>
+
+      <div class="template-card" onclick="loadTemplate('07-medical-healthcare.html', this)">
+        <div class="card-top">
+          <span class="template-number">07</span>
+          <span class="badge-tag">Pharma</span>
+        </div>
+        <div class="template-name">Medical &amp; Healthcare Pharma</div>
+        <div class="template-desc">Drug License (D.L.), Batch No, Expiry Date, clinical blue theme, and hospital reference.</div>
+      </div>
+    </aside>
+
+    <!-- Preview Area -->
+    <main>
+      <div class="preview-bar">
+        <div class="preview-info">Previewing: <strong id="currentTemplateName">08-compact-a4-single-page.html</strong></div>
+        <div class="preview-actions">
+          <button class="view-mode-btn" onclick="printCurrent()">🖨 Print / PDF View</button>
+        </div>
+      </div>
+      <div class="iframe-container">
+        <iframe id="previewFrame" src="08-compact-a4-single-page.html"></iframe>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function loadTemplate(filename, element) {
+      document.querySelectorAll('.template-card').forEach(c => c.classList.remove('active'));
+      if (element) element.classList.add('active');
+      document.getElementById('previewFrame').src = filename;
+      document.getElementById('openNewTab').href = filename;
+      document.getElementById('currentTemplateName').textContent = filename;
+    }
+
+    function printCurrent() {
+      const frame = document.getElementById('previewFrame');
+      if (frame && frame.contentWindow) {
+        frame.contentWindow.print();
+      }
+    }
+  </script>
+</body>
+</html>

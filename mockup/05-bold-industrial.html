@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bold Industrial &amp; Logistics — Invoice Template</title>
+<style>
+  :root {
+    --industrial-dark: #18181b;
+    --industrial-charcoal: #27272a;
+    --industrial-amber: #d97706;
+    --industrial-amber-dark: #b45309;
+    --industrial-amber-bg: #fffbeb;
+    --industrial-gray: #71717a;
+    --industrial-border: #e4e4e7;
+    --industrial-light: #f4f4f5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    background: #e4e4e7;
+    padding: 28px 16px;
+    color: var(--industrial-dark);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .sheet {
+    max-width: 840px;
+    margin: 0 auto 32px;
+    background: #ffffff;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+    border: 1px solid #d4d4d8;
+  }
+  
+  /* Top Accent Stripe */
+  .top-stripe {
+    height: 8px;
+    background: var(--industrial-amber);
+  }
+
+  /* Header Section */
+  .header-block {
+    background: var(--industrial-dark);
+    color: #ffffff;
+    padding: 28px 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .company-title {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .company-title span.badge {
+    background: var(--industrial-amber);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+  }
+  .company-sub {
+    font-size: 12px;
+    color: #a1a1aa;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .company-sub strong { color: #f4f4f5; }
+
+  .doc-title-box {
+    text-align: right;
+  }
+  .doc-type {
+    font-size: 22px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--industrial-amber);
+  }
+  .doc-meta-row {
+    font-size: 12px;
+    color: #a1a1aa;
+    margin-top: 4px;
+  }
+  .doc-meta-row strong {
+    color: #ffffff;
+    font-size: 14px;
+  }
+
+  /* Main Inner Content */
+  .inner-content {
+    padding: 28px 36px 36px;
+  }
+
+  /* Parties and Transport Grid */
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .meta-box {
+    border: 1px solid var(--industrial-border);
+    padding: 14px;
+    background: #ffffff;
+    border-top: 3px solid var(--industrial-charcoal);
+  }
+  .meta-box.highlight {
+    border-top-color: var(--industrial-amber);
+    background: var(--industrial-amber-bg);
+  }
+  .meta-box-title {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--industrial-gray);
+    margin-bottom: 8px;
+  }
+  .party-name {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--industrial-dark);
+  }
+  .party-desc {
+    font-size: 11.5px;
+    color: #52525b;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .party-desc strong { color: var(--industrial-dark); }
+
+  .spec-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .spec-table td { padding: 3px 0; }
+  .spec-table td:first-child { color: #71717a; width: 48%; }
+  .spec-table td:last-child { font-weight: 700; text-align: right; color: var(--industrial-dark); }
+
+  /* Items Table */
+  table.industrial-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    margin-bottom: 24px;
+    border: 1px solid var(--industrial-border);
+  }
+  table.industrial-table th {
+    background: var(--industrial-dark);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 10px 8px;
+    text-align: right;
+    border: 1px solid var(--industrial-charcoal);
+  }
+  table.industrial-table th:first-child { text-align: center; }
+  table.industrial-table th.desc { text-align: left; }
+  table.industrial-table td {
+    padding: 9px 8px;
+    border: 1px solid var(--industrial-border);
+    text-align: right;
+    vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+  }
+  table.industrial-table td:first-child { text-align: center; color: var(--industrial-gray); font-weight: 700; }
+  table.industrial-table td.desc { text-align: left; }
+  table.industrial-table td.desc strong { display: block; font-size: 12px; font-weight: 700; color: var(--industrial-dark); }
+  table.industrial-table td.desc small { color: var(--industrial-gray); }
+  table.industrial-table tbody tr:nth-child(even) { background: var(--industrial-light); }
+  table.industrial-table td.total-cell { font-weight: 800; color: var(--industrial-dark); }
+
+  /* Lower Section: HSN + Totals */
+  .lower-split {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  .hsn-panel .panel-title {
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--industrial-gray);
+    margin-bottom: 8px;
+  }
+  table.hsn-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    border: 1px solid var(--industrial-border);
+  }
+  table.hsn-table th {
+    background: var(--industrial-light);
+    font-weight: 700;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    padding: 6px 8px;
+    border: 1px solid var(--industrial-border);
+    text-align: right;
+  }
+  table.hsn-table th:first-child { text-align: left; }
+  table.hsn-table td {
+    padding: 6px 8px;
+    border: 1px solid var(--industrial-border);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  table.hsn-table td:first-child { text-align: left; font-weight: 700; }
+
+  /* Payment Details */
+  .bank-panel {
+    margin-top: 14px;
+    background: var(--industrial-light);
+    border-left: 3px solid var(--industrial-amber);
+    padding: 10px 14px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .bank-panel strong { color: var(--industrial-dark); }
+
+  /* Totals Box */
+  .totals-panel {
+    border: 2px solid var(--industrial-dark);
+    padding: 16px;
+    background: #ffffff;
+  }
+  table.totals-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  table.totals-table td {
+    padding: 4.5px 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  table.totals-table td:first-child {
+    text-align: left;
+    color: #52525b;
+  }
+  table.totals-table td:last-child {
+    font-weight: 700;
+  }
+  table.totals-table tr.grand-row td {
+    border-top: 2px solid var(--industrial-dark);
+    padding-top: 8px;
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--industrial-dark);
+  }
+  table.totals-table tr.grand-row td:last-child {
+    color: var(--industrial-amber-dark);
+  }
+
+  .in-words-box {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--industrial-border);
+    font-size: 11px;
+    color: #52525b;
+  }
+  .in-words-box strong { color: var(--industrial-dark); }
+
+  /* Bottom Sign and Declaration */
+  .closing-split {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--industrial-border);
+  }
+  .terms-text {
+    font-size: 10.5px;
+    color: #71717a;
+    line-height: 1.55;
+  }
+  .terms-text strong { color: var(--industrial-dark); }
+
+  .signature-box {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+  }
+  .sig-line {
+    width: 200px;
+    border-top: 2px solid var(--industrial-dark);
+    padding-top: 6px;
+    text-align: center;
+  }
+  .sig-line strong { display: block; font-size: 12px; color: var(--industrial-dark); }
+  .sig-line small { font-size: 10.5px; color: var(--industrial-gray); }
+
+  @media print {
+    @page { size: A4; margin: 10mm; }
+    body { background: #ffffff; padding: 0; }
+    .sheet { box-shadow: none; max-width: none; border: none; margin: 0; }
+    .inner-content { padding: 20px 0 0; }
+    .header-block { padding: 20px 24px; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="top-stripe"></div>
+
+    <!-- Header Block -->
+    <div class="header-block">
+      <div>
+        <div class="company-title">
+          KJ Enterprises
+          <span class="badge">ISO 9001:2015</span>
+        </div>
+        <div class="company-sub">
+          <strong>Regd. Office:</strong> 22, MG Road, Bengaluru, Karnataka 560001<br>
+          Phone: +91 98765 43210 &nbsp;•&nbsp; Email: accounts@kjenterprises.in<br>
+          <strong>GSTIN: 29ABCDE1234F1Z5</strong> &nbsp;•&nbsp; State Code: 29 (Karnataka)
+        </div>
+      </div>
+      <div class="doc-title-box">
+        <div class="doc-type">Tax Invoice</div>
+        <div class="doc-meta-row">Invoice No: <strong>INV-2026-0141</strong></div>
+        <div class="doc-meta-row">Date: <strong>19-Sep-2026</strong></div>
+        <div class="doc-meta-row">Due Date: <strong>26-Sep-2026</strong></div>
+      </div>
+    </div>
+
+    <!-- Inner Content -->
+    <div class="inner-content">
+
+      <!-- 3-Way Metadata Grid -->
+      <div class="meta-grid">
+        <!-- Billed To -->
+        <div class="meta-box">
+          <div class="meta-box-title">Consignee / Buyer (Billed To)</div>
+          <div class="party-name">Sharma Traders</div>
+          <div class="party-desc">
+            14, 100 Ft Road, Indiranagar<br>
+            Bengaluru, Karnataka 560038<br>
+            Phone: <strong>+91 99880 11223</strong><br>
+            GSTIN: <strong>29ABCDE1234F1Z5</strong><br>
+            State: Karnataka (29)
+          </div>
+        </div>
+
+        <!-- Shipped To -->
+        <div class="meta-box">
+          <div class="meta-box-title">Delivery / Shipped To</div>
+          <div class="party-name">Sharma Traders — Warehouse</div>
+          <div class="party-desc">
+            Plot 42, Peenya Industrial Area, Phase II<br>
+            Bengaluru, Karnataka 560058<br>
+            Contact: Mr. R. Sharma (+91 98450 99881)<br>
+            State: Karnataka (29)
+          </div>
+        </div>
+
+        <!-- Dispatch Details -->
+        <div class="meta-box highlight">
+          <div class="meta-box-title">Transport &amp; Dispatch Details</div>
+          <table class="spec-table">
+            <tr><td>E-Way Bill:</td><td>2418 9021 3452</td></tr>
+            <tr><td>Vehicle No:</td><td>KA-04-ME-5621</td></tr>
+            <tr><td>GR / LR No:</td><td>LR-77291</td></tr>
+            <tr><td>Place of Supply:</td><td>Karnataka (29)</td></tr>
+            <tr><td>Dispatch Via:</td><td>Surface Express</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <table class="industrial-table">
+        <thead>
+          <tr>
+            <th style="width: 30px;">#</th>
+            <th class="desc">Description of Goods</th>
+            <th style="width: 55px;">HSN/SAC</th>
+            <th style="width: 45px;">Qty</th>
+            <th style="width: 75px;">Unit Rate</th>
+            <th style="width: 50px;">Disc</th>
+            <th style="width: 80px;">Taxable (₹)</th>
+            <th style="width: 48px;">GST %</th>
+            <th style="width: 85px;">Total (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>01</td>
+            <td class="desc">
+              <strong>Premium Steel Cookware</strong>
+              <small>5 pc heavy-gauge stainless steel commercial set</small>
+            </td>
+            <td>7323</td>
+            <td>3 SET</td>
+            <td>2,499.00</td>
+            <td>10%</td>
+            <td>6,747.30</td>
+            <td>18%</td>
+            <td class="total-cell">7,961.81</td>
+          </tr>
+          <tr>
+            <td>02</td>
+            <td class="desc">
+              <strong>Induction Cooktop</strong>
+              <small>2000W heavy duty heating plate with warranty</small>
+            </td>
+            <td>8516</td>
+            <td>2 NOS</td>
+            <td>3,299.00</td>
+            <td>5%</td>
+            <td>6,268.10</td>
+            <td>18%</td>
+            <td class="total-cell">7,396.36</td>
+          </tr>
+          <tr>
+            <td>03</td>
+            <td class="desc">
+              <strong>Nonstick Tawa</strong>
+              <small>28 cm industrial hard anodised flat base</small>
+            </td>
+            <td>7323</td>
+            <td>5 NOS</td>
+            <td>749.00</td>
+            <td>—</td>
+            <td>3,745.00</td>
+            <td>18%</td>
+            <td class="total-cell">4,419.10</td>
+          </tr>
+          <tr>
+            <td>04</td>
+            <td class="desc">
+              <strong>Kitchen Knife Set</strong>
+              <small>High carbon forged steel 4-blade + solid wooden block</small>
+            </td>
+            <td>8211</td>
+            <td>4 SET</td>
+            <td>1,199.00</td>
+            <td>10%</td>
+            <td>4,316.40</td>
+            <td>12%</td>
+            <td class="total-cell">4,834.37</td>
+          </tr>
+          <tr>
+            <td>05</td>
+            <td class="desc">
+              <strong>Mixer Grinder</strong>
+              <small>750W high torque copper motor with 3 stainless jars</small>
+            </td>
+            <td>8509</td>
+            <td>1 NOS</td>
+            <td>2,999.00</td>
+            <td>15%</td>
+            <td>2,549.15</td>
+            <td>18%</td>
+            <td class="total-cell">3,008.00</td>
+          </tr>
+          <tr>
+            <td>06</td>
+            <td class="desc">
+              <strong>Storage Containers</strong>
+              <small>Airtight modular food grade container pack of 6</small>
+            </td>
+            <td>3924</td>
+            <td>6 PKT</td>
+            <td>399.00</td>
+            <td>—</td>
+            <td>2,394.00</td>
+            <td>12%</td>
+            <td class="total-cell">2,681.28</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Lower Split: HSN & Totals -->
+      <div class="lower-split">
+        <div class="hsn-panel">
+          <div class="panel-title">HSN Tax Breakdown Summary</div>
+          <table class="hsn-table">
+            <thead>
+              <tr>
+                <th>HSN</th>
+                <th>Rate</th>
+                <th>Taxable Value</th>
+                <th>Tax Amount</th>
+                <th>Total Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>7323</td>
+                <td>18%</td>
+                <td>10,492.30</td>
+                <td>1,888.61</td>
+                <td>12,380.91</td>
+              </tr>
+              <tr>
+                <td>8516</td>
+                <td>18%</td>
+                <td>6,268.10</td>
+                <td>1,128.26</td>
+                <td>7,396.36</td>
+              </tr>
+              <tr>
+                <td>8211</td>
+                <td>12%</td>
+                <td>4,316.40</td>
+                <td>517.97</td>
+                <td>4,834.37</td>
+              </tr>
+              <tr>
+                <td>8509</td>
+                <td>18%</td>
+                <td>2,549.15</td>
+                <td>458.85</td>
+                <td>3,008.00</td>
+              </tr>
+              <tr>
+                <td>3924</td>
+                <td>12%</td>
+                <td>2,394.00</td>
+                <td>287.28</td>
+                <td>2,681.28</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="bank-panel">
+            <strong>Remittance Details:</strong><br>
+            Bank: HDFC Bank • Branch: MG Road, Bengaluru<br>
+            A/C: <strong>5010 0234 5678 9123</strong> • IFSC: <strong>HDFC0001234</strong><br>
+            UPI ID: <strong>kj@hdfcbank</strong>
+          </div>
+        </div>
+
+        <div class="totals-panel">
+          <table class="totals-table">
+            <tr>
+              <td>Gross Total:</td>
+              <td>₹30,300.92</td>
+            </tr>
+            <tr>
+              <td>Trade Discount:</td>
+              <td>−₹2,009.05</td>
+            </tr>
+            <tr>
+              <td>Taxable Amount:</td>
+              <td>₹26,019.95</td>
+            </tr>
+            <tr>
+              <td>CGST @ 9%:</td>
+              <td>₹2,140.50</td>
+            </tr>
+            <tr>
+              <td>SGST @ 9%:</td>
+              <td>₹2,140.47</td>
+            </tr>
+            <tr class="grand-row">
+              <td>Total Amount Due:</td>
+              <td>₹30,300.92</td>
+            </tr>
+          </table>
+
+          <div class="in-words-box">
+            <strong>Amount in words:</strong><br>
+            Thirty Thousand Three Hundred Rupees and Ninety Two Paise Only.
+          </div>
+        </div>
+      </div>
+
+      <!-- Closing Terms & Signature -->
+      <div class="closing-split">
+        <div class="terms-text">
+          <strong>Terms &amp; Conditions:</strong><br>
+          1. Goods dispatched at buyer's risk. Transporter's receipt is conclusive proof of dispatch.<br>
+          2. Payment strictly due within 7 days. Interest @ 18% p.a. charged on delayed payments.<br>
+          3. We declare that this invoice shows actual price of goods described and all particulars are true and correct.
+        </div>
+        <div class="signature-box">
+          <div style="height: 44px;"></div>
+          <div class="sig-line">
+            <strong>For KJ Enterprises</strong>
+            <small>Authorised Signatory</small>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

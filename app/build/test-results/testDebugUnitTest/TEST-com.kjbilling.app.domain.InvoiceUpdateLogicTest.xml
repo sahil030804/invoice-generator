@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.kjbilling.app.domain.InvoiceUpdateLogicTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-09-19T18:16:18" hostname="Sahil" time="0.043">
+  <properties/>
+  <testcase name="testModifyItemQuantityRecalculatesTotals" classname="com.kjbilling.app.domain.InvoiceUpdateLogicTest" time="0.012"/>
+  <testcase name="testTaxTypeChangesWhenCustomerStateChanges" classname="com.kjbilling.app.domain.InvoiceUpdateLogicTest" time="0.008"/>
+  <testcase name="testAddNewItemToExistingInvoice" classname="com.kjbilling.app.domain.InvoiceUpdateLogicTest" time="0.011"/>
+  <testcase name="testCancelledInvoiceCannotBeEdited" classname="com.kjbilling.app.domain.InvoiceUpdateLogicTest" time="0.001"/>
+  <testcase name="testPaymentStatusRemainsUnpaidIfZeroAmountPaid" classname="com.kjbilling.app.domain.InvoiceUpdateLogicTest" time="0.0"/>
+  <testcase name="testPreserveInvoiceIdentityOnUpdate" classname="com.kjbilling.app.domain.InvoiceUpdateLogicTest" time="0.0"/>
+  <testcase name="testPaymentStatusTransitionWhenGrandTotalDecreasesBelowAmountPaid" classname="com.kjbilling.app.domain.InvoiceUpdateLogicTest" time="0.0"/>
+  <testcase name="testRemoveItemFromInvoice" classname="com.kjbilling.app.domain.InvoiceUpdateLogicTest" time="0.001"/>
+  <testcase name="testValidationFailsWhenAllItemsRemoved" classname="com.kjbilling.app.domain.InvoiceUpdateLogicTest" time="0.001"/>
+  <testcase name="testValidationFailsOnInvalidItemValues" classname="com.kjbilling.app.domain.InvoiceUpdateLogicTest" time="0.005"/>
+  <testcase name="testPaymentStatusTransitionWhenGrandTotalIncreases" classname="com.kjbilling.app.domain.InvoiceUpdateLogicTest" time="0.001"/>
+  <testcase name="testModifyItemUnitPriceAndDiscount" classname="com.kjbilling.app.domain.InvoiceUpdateLogicTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

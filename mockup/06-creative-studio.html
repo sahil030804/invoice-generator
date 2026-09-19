@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creative Studio &amp; Agency — Invoice Template</title>
+<style>
+  :root {
+    --emerald-900: #064e3b;
+    --emerald-800: #065f46;
+    --emerald-700: #047857;
+    --emerald-600: #059669;
+    --emerald-100: #d1fae5;
+    --emerald-50: #ecfdf5;
+    --stone-900: #1c1917;
+    --stone-700: #44403c;
+    --stone-600: #57534e;
+    --stone-500: #78716c;
+    --stone-400: #a8a29e;
+    --stone-200: #e7e5e4;
+    --stone-100: #f5f5f4;
+    --stone-50: #fafaf9;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Inter', 'Segoe UI', Roboto, sans-serif;
+    background: #e7e5e4;
+    padding: 32px 16px;
+    color: var(--stone-900);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .sheet {
+    max-width: 820px;
+    margin: 0 auto 32px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 12px 36px rgba(6, 78, 59, 0.08);
+    overflow: hidden;
+  }
+  .page { padding: 48px 52px; }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 32px;
+    border-bottom: 1.5px solid var(--stone-200);
+  }
+  .brand-tag {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--emerald-700);
+    margin-bottom: 6px;
+  }
+  .brand-title {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--emerald-900);
+  }
+  .brand-contact {
+    margin-top: 8px;
+    font-size: 12.5px;
+    color: var(--stone-500);
+    line-height: 1.6;
+  }
+  .brand-contact strong { color: var(--stone-700); }
+
+  .doc-info { text-align: right; }
+  .doc-badge {
+    display: inline-block;
+    background: var(--emerald-100);
+    color: var(--emerald-800);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .invoice-num {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--stone-900);
+    margin-top: 6px;
+    letter-spacing: -0.5px;
+  }
+  .dates-row {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--stone-500);
+  }
+  .dates-row strong { color: var(--stone-700); }
+
+  /* Meta Cards */
+  .meta-container {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+    margin: 32px 0 28px;
+  }
+  .client-card {
+    background: var(--stone-50);
+    border-radius: 12px;
+    padding: 18px 22px;
+    border: 1px solid var(--stone-200);
+  }
+  .card-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--emerald-700);
+    margin-bottom: 8px;
+  }
+  .client-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--stone-900);
+  }
+  .client-details {
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: var(--stone-600);
+    line-height: 1.6;
+  }
+  .client-details strong { color: var(--stone-900); }
+
+  .project-card {
+    background: var(--emerald-50);
+    border-radius: 12px;
+    padding: 18px 22px;
+    border: 1px solid #bbf7d0;
+  }
+  .project-meta-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .project-meta-table td { padding: 4px 0; }
+  .project-meta-table td:first-child { color: var(--emerald-800); width: 44%; }
+  .project-meta-table td:last-child { font-weight: 700; text-align: right; color: var(--emerald-900); }
+
+  /* Items Table */
+  table.items-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+    margin-bottom: 28px;
+  }
+  table.items-table th {
+    background: var(--stone-100);
+    color: var(--stone-700);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 12px 10px;
+    text-align: right;
+    border-top: 1px solid var(--stone-200);
+    border-bottom: 1px solid var(--stone-200);
+  }
+  table.items-table th:first-child {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    text-align: left;
+    padding-left: 14px;
+  }
+  table.items-table th.desc { text-align: left; }
+  table.items-table th:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    padding-right: 14px;
+  }
+  table.items-table td {
+    padding: 14px 10px;
+    border-bottom: 1px solid var(--stone-200);
+    text-align: right;
+    vertical-align: top;
+    font-variant-numeric: tabular-nums;
+  }
+  table.items-table td:first-child {
+    text-align: left;
+    padding-left: 14px;
+    color: var(--stone-400);
+    font-weight: 600;
+  }
+  table.items-table td.desc { text-align: left; }
+  table.items-table td.desc .item-title {
+    font-weight: 700;
+    color: var(--stone-900);
+    font-size: 13px;
+  }
+  table.items-table td.desc .item-subtitle {
+    font-size: 11.5px;
+    color: var(--stone-500);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+  table.items-table td:last-child {
+    padding-right: 14px;
+    font-weight: 700;
+    color: var(--emerald-900);
+  }
+
+  /* Split Lower: HSN & Totals */
+  .summary-split {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 32px;
+    margin-bottom: 32px;
+  }
+  .hsn-box .section-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--emerald-700);
+    margin-bottom: 10px;
+  }
+  table.hsn-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+  }
+  table.hsn-table th {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--stone-500);
+    text-align: right;
+    padding: 6px 6px;
+    border-bottom: 1.5px solid var(--stone-200);
+  }
+  table.hsn-table th:first-child { text-align: left; padding-left: 0; }
+  table.hsn-table td {
+    padding: 6px 6px;
+    border-bottom: 1px dashed var(--stone-200);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--stone-600);
+  }
+  table.hsn-table td:first-child { text-align: left; padding-left: 0; font-weight: 600; color: var(--stone-900); }
+
+  /* Totals Box */
+  .totals-card {
+    background: var(--stone-50);
+    border: 1px solid var(--stone-200);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  table.totals-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.totals-table td { padding: 5px 0; text-align: right; font-variant-numeric: tabular-nums; }
+  table.totals-table td:first-child { text-align: left; color: var(--stone-600); }
+  table.totals-table td:last-child { font-weight: 700; color: var(--stone-900); }
+  table.totals-table tr.grand td {
+    border-top: 2px solid var(--emerald-700);
+    padding-top: 10px;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--emerald-900);
+  }
+  .in-words {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--stone-200);
+    font-size: 12px;
+    color: var(--stone-500);
+    line-height: 1.5;
+  }
+  .in-words strong { color: var(--stone-800); }
+
+  /* Bottom Actions & Sign */
+  .footer-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--stone-200);
+  }
+  .pay-instruction {
+    background: #ffffff;
+    border: 1px solid var(--stone-200);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 12px;
+    color: var(--stone-600);
+    line-height: 1.6;
+  }
+  .pay-instruction strong { color: var(--emerald-900); }
+
+  .signature-block {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    text-align: right;
+  }
+  .sig-line {
+    width: 200px;
+    border-top: 1.5px solid var(--emerald-900);
+    padding-top: 6px;
+    text-align: center;
+  }
+  .sig-line strong { display: block; font-size: 13px; color: var(--stone-900); }
+  .sig-line small { font-size: 11px; color: var(--stone-400); }
+
+  .disclaimer {
+    margin-top: 24px;
+    font-size: 11px;
+    color: var(--stone-400);
+    line-height: 1.6;
+  }
+
+  @media print {
+    @page { size: A4; margin: 12mm; }
+    body { background: #ffffff; padding: 0; }
+    .sheet { box-shadow: none; border-radius: 0; max-width: none; }
+    .page { padding: 0; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="page">
+
+      <!-- Header -->
+      <div class="header">
+        <div>
+          <span class="brand-tag">Design &amp; Technology Studio</span>
+          <div class="brand-title">KJ Enterprises</div>
+          <div class="brand-contact">
+            22, MG Road, Bengaluru, Karnataka 560001<br>
+            +91 98765 43210 &nbsp;•&nbsp; accounts@kjenterprises.in<br>
+            <strong>GSTIN:</strong> 29ABCDE1234F1Z5 &nbsp;•&nbsp; <strong>State:</strong> Karnataka (29)
+          </div>
+        </div>
+        <div class="doc-info">
+          <span class="doc-badge">Tax Invoice</span>
+          <div class="invoice-num">INV-2026-0141</div>
+          <div class="dates-row">Issue Date: <strong>19 Sept 2026</strong></div>
+          <div class="dates-row">Due Date: <strong>26 Sept 2026</strong></div>
+        </div>
+      </div>
+
+      <!-- Meta Cards -->
+      <div class="meta-container">
+        <div class="client-card">
+          <div class="card-label">Invoiced To</div>
+          <div class="client-name">Sharma Traders</div>
+          <div class="client-details">
+            14, 100 Ft Road, Indiranagar<br>
+            Bengaluru, Karnataka 560038<br>
+            Contact: <strong>+91 99880 11223</strong><br>
+            GSTIN: <strong>29ABCDE1234F1Z5</strong> (Karnataka)
+          </div>
+        </div>
+        <div class="project-card">
+          <div class="card-label">Invoice Particulars</div>
+          <table class="project-meta-table">
+            <tr><td>Supply Type:</td><td>Intrastate Supply (CGST+SGST)</td></tr>
+            <tr><td>Place of Supply:</td><td>Karnataka (29)</td></tr>
+            <tr><td>Payment Terms:</td><td>Net 7 Business Days</td></tr>
+            <tr><td>Payment Status:</td><td style="color: var(--emerald-700);">Awaiting Payment</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="width: 28px;">#</th>
+            <th class="desc">Item / Deliverable</th>
+            <th style="width: 52px;">HSN</th>
+            <th style="width: 40px;">Qty</th>
+            <th style="width: 75px;">Rate (₹)</th>
+            <th style="width: 50px;">Disc</th>
+            <th style="width: 80px;">Taxable (₹)</th>
+            <th style="width: 48px;">GST</th>
+            <th style="width: 85px;">Total (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td class="desc">
+              <div class="item-title">Premium Steel Cookware</div>
+              <div class="item-subtitle">5 pc professional stainless steel cookware set with ergonomic handles</div>
+            </td>
+            <td>7323</td>
+            <td>3</td>
+            <td>2,499.00</td>
+            <td>10%</td>
+            <td>6,747.30</td>
+            <td>18%</td>
+            <td>7,961.81</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td class="desc">
+              <div class="item-title">Induction Cooktop</div>
+              <div class="item-subtitle">2000W crystal glass finish, multi preset modes</div>
+            </td>
+            <td>8516</td>
+            <td>2</td>
+            <td>3,299.00</td>
+            <td>5%</td>
+            <td>6,268.10</td>
+            <td>18%</td>
+            <td>7,396.36</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td class="desc">
+              <div class="item-title">Nonstick Tawa</div>
+              <div class="item-subtitle">28 cm extra hard anodised surface, scratch resistant</div>
+            </td>
+            <td>7323</td>
+            <td>5</td>
+            <td>749.00</td>
+            <td>—</td>
+            <td>3,745.00</td>
+            <td>18%</td>
+            <td>4,419.10</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td class="desc">
+              <div class="item-title">Kitchen Knife Set</div>
+              <div class="item-subtitle">High carbon German steel 4-piece set with wooden magnetic stand</div>
+            </td>
+            <td>8211</td>
+            <td>4</td>
+            <td>1,199.00</td>
+            <td>10%</td>
+            <td>4,316.40</td>
+            <td>12%</td>
+            <td>4,834.37</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td class="desc">
+              <div class="item-title">Mixer Grinder</div>
+              <div class="item-subtitle">750W heavy duty copper motor, 3 stainless steel jars with flow breakers</div>
+            </td>
+            <td>8509</td>
+            <td>1</td>
+            <td>2,999.00</td>
+            <td>15%</td>
+            <td>2,549.15</td>
+            <td>18%</td>
+            <td>3,008.00</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td class="desc">
+              <div class="item-title">Storage Containers</div>
+              <div class="item-subtitle">Set of 6 modular airtight canisters, 100% food-grade material</div>
+            </td>
+            <td>3924</td>
+            <td>6</td>
+            <td>399.00</td>
+            <td>—</td>
+            <td>2,394.00</td>
+            <td>12%</td>
+            <td>2,681.28</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Split Lower: HSN & Totals -->
+      <div class="summary-split">
+        <div class="hsn-box">
+          <div class="section-title">GST Breakdown by HSN/SAC</div>
+          <table class="hsn-table">
+            <thead>
+              <tr>
+                <th>HSN</th>
+                <th>Rate</th>
+                <th>Taxable (₹)</th>
+                <th>Tax Amt (₹)</th>
+                <th>Total (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>7323</td>
+                <td>18%</td>
+                <td>10,492.30</td>
+                <td>1,888.61</td>
+                <td>12,380.91</td>
+              </tr>
+              <tr>
+                <td>8516</td>
+                <td>18%</td>
+                <td>6,268.10</td>
+                <td>1,128.26</td>
+                <td>7,396.36</td>
+              </tr>
+              <tr>
+                <td>8211</td>
+                <td>12%</td>
+                <td>4,316.40</td>
+                <td>517.97</td>
+                <td>4,834.37</td>
+              </tr>
+              <tr>
+                <td>8509</td>
+                <td>18%</td>
+                <td>2,549.15</td>
+                <td>458.85</td>
+                <td>3,008.00</td>
+              </tr>
+              <tr>
+                <td>3924</td>
+                <td>12%</td>
+                <td>2,394.00</td>
+                <td>287.28</td>
+                <td>2,681.28</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="totals-card">
+          <table class="totals-table">
+            <tr>
+              <td>Subtotal:</td>
+              <td>₹30,300.92</td>
+            </tr>
+            <tr style="color: var(--emerald-700);">
+              <td>Discounts:</td>
+              <td>−₹2,009.05</td>
+            </tr>
+            <tr>
+              <td>Taxable Value:</td>
+              <td>₹26,019.95</td>
+            </tr>
+            <tr>
+              <td>CGST @ 9%:</td>
+              <td>₹2,140.50</td>
+            </tr>
+            <tr>
+              <td>SGST @ 9%:</td>
+              <td>₹2,140.47</td>
+            </tr>
+            <tr class="grand">
+              <td>Total Payable:</td>
+              <td>₹30,300.92</td>
+            </tr>
+          </table>
+          <div class="in-words">
+            <strong>Amount in words:</strong><br>
+            Thirty Thousand Three Hundred Rupees and Ninety Two Paise Only.
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Row -->
+      <div class="footer-row">
+        <div class="pay-instruction">
+          <strong>Direct Bank Transfer:</strong><br>
+          Bank: HDFC Bank Ltd • A/C No: <strong>5010 0234 5678 9123</strong><br>
+          IFSC: <strong>HDFC0001234</strong> • UPI: <strong>kj@hdfcbank</strong><br>
+          Please quote invoice number <strong>INV-2026-0141</strong> as reference.
+        </div>
+
+        <div class="signature-block">
+          <div style="height: 48px;"></div>
+          <div class="sig-line">
+            <strong>Karan Jain</strong>
+            <small>Authorised Signatory — KJ Enterprises</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="disclaimer">
+        Declaration: We declare that this invoice shows the actual price of the goods and services described and that all particulars are true and correct. Goods once sold are not eligible for return without prior authorization.
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
