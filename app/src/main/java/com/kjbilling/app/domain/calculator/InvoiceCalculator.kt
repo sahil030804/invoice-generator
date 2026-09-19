@@ -30,18 +30,22 @@ class InvoiceCalculator {
     fun calculateItem(
         quantity: BigDecimal,
         unitPrice: BigDecimal,
-        discountPercent: BigDecimal,
-        gstRate: BigDecimal,
-        taxType: TaxType
+        discountPercent: BigDecimal = BigDecimal.ZERO,
+        gstRate: BigDecimal = BigDecimal.ZERO,
+        taxType: TaxType = TaxType.CGST_SGST,
+        discountAmount: BigDecimal? = null
     ): InvoiceItemCalculation {
         val itemAmount = quantity.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP)
         
-        var discountAmount = itemAmount.multiply(discountPercent).divide(BigDecimal("100"), 2, RoundingMode.HALF_UP)
-        if (discountAmount > itemAmount) {
-            discountAmount = itemAmount
+        var effectiveDiscount = discountAmount ?: itemAmount.multiply(discountPercent).divide(BigDecimal("100"), 2, RoundingMode.HALF_UP)
+        if (effectiveDiscount > itemAmount) {
+            effectiveDiscount = itemAmount
+        }
+        if (effectiveDiscount < BigDecimal.ZERO) {
+            effectiveDiscount = BigDecimal.ZERO.setScale(2)
         }
         
-        var taxableAmount = itemAmount.subtract(discountAmount)
+        var taxableAmount = itemAmount.subtract(effectiveDiscount)
         if (taxableAmount < BigDecimal.ZERO) {
             taxableAmount = BigDecimal.ZERO.setScale(2)
         }
@@ -72,7 +76,7 @@ class InvoiceCalculator {
         
         return InvoiceItemCalculation(
             itemAmount = itemAmount,
-            discountAmount = discountAmount,
+            discountAmount = effectiveDiscount,
             taxableAmount = taxableAmount,
             cgstAmount = cgst,
             sgstAmount = sgst,
@@ -84,22 +88,91 @@ class InvoiceCalculator {
         )
     }
 
-    fun calculateInvoice(items: List<InvoiceItemCalculation>): InvoiceTotals {
-        var subtotal = BigDecimal.ZERO.setScale(2)
-        var totalDiscount = BigDecimal.ZERO.setScale(2)
-        var totalTax = BigDecimal.ZERO.setScale(2)
+    fun calculateInvoice(
+        items: List<InvoiceItemCalculation>,
+        overallDiscountPercent: BigDecimal = BigDecimal.ZERO,
+        overallDiscountAmount: BigDecimal = BigDecimal.ZERO
+    ): InvoiceTotals {
+        var grossSubtotal = BigDecimal.ZERO.setScale(2)
+        var itemDiscountTotal = BigDecimal.ZERO.setScale(2)
+        var taxableBeforeOverall = BigDecimal.ZERO.setScale(2)
         
         for (item in items) {
-            subtotal = subtotal.add(item.taxableAmount)
-            totalDiscount = totalDiscount.add(item.discountAmount)
+            grossSubtotal = grossSubtotal.add(item.itemAmount)
+            itemDiscountTotal = itemDiscountTotal.add(item.discountAmount)
+            taxableBeforeOverall = taxableBeforeOverall.add(item.taxableAmount)
+        }
+
+        var overallDiscount = when {
+            overallDiscountPercent > BigDecimal.ZERO -> {
+                taxableBeforeOverall.multiply(overallDiscountPercent).divide(BigDecimal("100"), 2, RoundingMode.HALF_UP)
+            }
+            overallDiscountAmount > BigDecimal.ZERO -> {
+                overallDiscountAmount.setScale(2, RoundingMode.HALF_UP)
+            }
+            else -> BigDecimal.ZERO.setScale(2)
+        }
+        if (overallDiscount > taxableBeforeOverall) {
+            overallDiscount = taxableBeforeOverall
+        }
+
+        val totalDiscount = itemDiscountTotal.add(overallDiscount)
+
+        // Distribute overall discount across items proportionally to calculate exact GST
+        val calculatedItems = if (overallDiscount > BigDecimal.ZERO && taxableBeforeOverall > BigDecimal.ZERO) {
+            var distributedSoFar = BigDecimal.ZERO
+            items.mapIndexed { index, item ->
+                val share = if (index == items.lastIndex) {
+                    overallDiscount.subtract(distributedSoFar)
+                } else {
+                    overallDiscount.multiply(item.taxableAmount).divide(taxableBeforeOverall, 2, RoundingMode.HALF_UP)
+                }
+                distributedSoFar = distributedSoFar.add(share)
+                val newTaxable = item.taxableAmount.subtract(share).coerceAtLeast(BigDecimal.ZERO)
+                
+                val taxAmount = newTaxable.multiply(item.gstRate).divide(BigDecimal("100"), 2, RoundingMode.HALF_UP)
+                var cgst = BigDecimal.ZERO.setScale(2)
+                var sgst = BigDecimal.ZERO.setScale(2)
+                var igst = BigDecimal.ZERO.setScale(2)
+                var finalTax = taxAmount
+                
+                when (item.taxType) {
+                    TaxType.CGST_SGST -> {
+                        val halfRate = item.gstRate.divide(BigDecimal("2"), 2, RoundingMode.HALF_UP)
+                        cgst = newTaxable.multiply(halfRate).divide(BigDecimal("100"), 2, RoundingMode.HALF_UP)
+                        sgst = cgst
+                        finalTax = cgst.add(sgst)
+                    }
+                    TaxType.IGST -> {
+                        igst = taxAmount
+                    }
+                    TaxType.NO_GST -> {
+                        finalTax = BigDecimal.ZERO.setScale(2)
+                    }
+                }
+                item.copy(
+                    discountAmount = item.discountAmount.add(share),
+                    taxableAmount = newTaxable,
+                    cgstAmount = cgst,
+                    sgstAmount = sgst,
+                    igstAmount = igst,
+                    taxAmount = finalTax,
+                    total = newTaxable.add(finalTax)
+                )
+            }
+        } else {
+            items
+        }
+
+        var totalTax = BigDecimal.ZERO.setScale(2)
+        for (item in calculatedItems) {
             totalTax = totalTax.add(item.taxAmount)
         }
-        
-        val grandTotal = subtotal.add(totalTax)
-        
+
+        val grandTotal = grossSubtotal.subtract(totalDiscount).add(totalTax)
+
         val breakdownMap = mutableMapOf<BigDecimal, TaxBreakdown>()
-        
-        for (item in items) {
+        for (item in calculatedItems) {
             val rate = item.gstRate.setScale(2, RoundingMode.HALF_UP)
             val existing = breakdownMap[rate] ?: TaxBreakdown(
                 gstRate = rate,
@@ -112,7 +185,6 @@ class InvoiceCalculator {
                 igstAmount = BigDecimal.ZERO.setScale(2),
                 totalTax = BigDecimal.ZERO.setScale(2)
             )
-            
             breakdownMap[rate] = existing.copy(
                 taxableAmount = existing.taxableAmount.add(item.taxableAmount),
                 cgstAmount = existing.cgstAmount.add(item.cgstAmount),
@@ -121,9 +193,9 @@ class InvoiceCalculator {
                 totalTax = existing.totalTax.add(item.taxAmount)
             )
         }
-        
+
         return InvoiceTotals(
-            subtotal = subtotal,
+            subtotal = grossSubtotal,
             totalDiscount = totalDiscount,
             totalTax = totalTax,
             grandTotal = grandTotal,

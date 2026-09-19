@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "KJ Invoice"
+rootProject.name = "Invoice Generator"
 include(":app")

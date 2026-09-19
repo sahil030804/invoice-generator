@@ -278,6 +278,7 @@ fun StatusChip(status: InvoiceStatus, paymentStatus: PaymentStatus) {
         status == InvoiceStatus.CANCELLED -> "Cancelled" to Color.Red
         status == InvoiceStatus.DRAFT -> "Draft" to Color.Gray
         paymentStatus == PaymentStatus.PAID -> "Paid" to Color(0xFF4CAF50)
+        paymentStatus == PaymentStatus.PARTIAL -> "Partial" to Color(0xFFFFB300)
         else -> "Unpaid" to Color(0xFFFF9800)
     }
 

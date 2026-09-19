@@ -1,8 +1,13 @@
 package com.kjbilling.app.ui.invoice.quick
 
 import android.widget.Toast
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -111,21 +116,48 @@ fun QuickBillScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text(
-                                text = "${cartSummary.totalCount} items selected",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = CurrencyFormatter.format(cartSummary.grandTotal),
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            AnimatedContent(
+                                targetState = cartSummary.totalCount,
+                                transitionSpec = {
+                                    (slideInVertically { height -> height / 2 } + fadeIn()) togetherWith
+                                        (slideOutVertically { height -> -height / 2 } + fadeOut())
+                                },
+                                label = "items_count"
+                            ) { count ->
+                                Text(
+                                    text = "$count ${if (count == 1) "item" else "items"} selected",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            AnimatedContent(
+                                targetState = cartSummary.grandTotal,
+                                transitionSpec = {
+                                    if (targetState > initialState) {
+                                        (slideInVertically(animationSpec = tween(220, easing = FastOutSlowInEasing)) { height -> height } + fadeIn()) togetherWith
+                                            (slideOutVertically(animationSpec = tween(220, easing = FastOutSlowInEasing)) { height -> -height } + fadeOut())
+                                    } else {
+                                        (slideInVertically(animationSpec = tween(220, easing = FastOutSlowInEasing)) { height -> -height } + fadeIn()) togetherWith
+                                            (slideOutVertically(animationSpec = tween(220, easing = FastOutSlowInEasing)) { height -> height } + fadeOut())
+                                    }.using(SizeTransform(clip = false))
+                                },
+                                label = "grand_total"
+                            ) { total ->
+                                Text(
+                                    text = CurrencyFormatter.format(total),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
 
+                        val haptic = LocalHapticFeedback.current
                         Button(
-                            onClick = { viewModel.generateBill() },
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                viewModel.generateBill()
+                            },
                             enabled = cartSummary.totalCount > 0 && !isGenerating,
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
@@ -243,6 +275,20 @@ fun QuickBillScreen(
     if (generatedInvoice != null && generatedFile != null) {
         val invoice = generatedInvoice!!
         val file = generatedFile!!
+        val haptic = LocalHapticFeedback.current
+
+        var checkmarkVisible by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            checkmarkVisible = true
+        }
+        val checkmarkScale by animateFloatAsState(
+            targetValue = if (checkmarkVisible) 1f else 0.2f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow
+            ),
+            label = "checkmark_scale"
+        )
 
         Dialog(
             onDismissRequest = { /* Force explicit user action */ },
@@ -261,10 +307,11 @@ fun QuickBillScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // Success Checkmark Icon
+                    // Success Checkmark Icon with Spring Pop
                     Box(
                         modifier = Modifier
                             .size(90.dp)
+                            .scale(checkmarkScale)
                             .background(Color(0xFF10B981).copy(alpha = 0.15f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -307,6 +354,7 @@ fun QuickBillScreen(
                     // 1. WhatsApp Action Button
                     Button(
                         onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             InvoiceShareHelper.shareFile(
                                 context = context,
                                 file = file,
@@ -335,6 +383,7 @@ fun QuickBillScreen(
                     // 2. Print Receipt Button
                     Button(
                         onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             InvoicePrintHelper.printPdf(context, file, "Invoice-${invoice.invoiceNumber}")
                         },
                         modifier = Modifier
@@ -356,6 +405,7 @@ fun QuickBillScreen(
                     // 3. Download PDF Button
                     OutlinedButton(
                         onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             scope.launch {
                                 val result = PdfDownloadHelper.downloadPdf(context, file)
                                 when (result) {
@@ -383,7 +433,10 @@ fun QuickBillScreen(
 
                     // 4. Start Next Bill Button (Large & Prominent)
                     FilledTonalButton(
-                        onClick = { viewModel.resetForNextBill() },
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.resetForNextBill()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
@@ -415,6 +468,8 @@ private fun CustomerSelectionSection(
     selectedCustomer: Customer?,
     onSelectCustomer: (Customer?) -> Unit
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -438,7 +493,10 @@ private fun CustomerSelectionSection(
                 val isSelected = selectedCustomer == null
                 FilterChip(
                     selected = isSelected,
-                    onClick = { onSelectCustomer(null) },
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onSelectCustomer(null)
+                    },
                     label = {
                         Text(
                             text = if (isSelected) "✓ Walk-in (Cash)" else "Walk-in (Cash)",
@@ -462,7 +520,10 @@ private fun CustomerSelectionSection(
                 val isSelected = selectedCustomer?.id == customer.id
                 FilterChip(
                     selected = isSelected,
-                    onClick = { onSelectCustomer(customer) },
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onSelectCustomer(customer)
+                    },
                     label = {
                         Text(
                             text = if (isSelected) "✓ ${customer.name}" else customer.name,
@@ -486,23 +547,38 @@ private fun ProductCard(
     onIncrement: () -> Unit,
     onDecrement: () -> Unit
 ) {
+    val haptic = LocalHapticFeedback.current
     val isSelected = quantity > 0
+
+    val animatedBorderColor by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "card_border"
+    )
+    val animatedContainerColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "card_container"
+    )
+    val animatedElevation by animateDpAsState(
+        targetValue = if (isSelected) 4.dp else 1.dp,
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "card_elevation"
+    )
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        ),
+        colors = CardDefaults.cardColors(containerColor = animatedContainerColor),
         border = BorderStroke(
             width = if (isSelected) 2.dp else 1.dp,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            color = animatedBorderColor
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 3.dp else 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = animatedElevation)
     ) {
         Column(
             modifier = Modifier
@@ -537,7 +613,10 @@ private fun ProductCard(
             ) {
                 // Minus Button
                 FilledTonalIconButton(
-                    onClick = onDecrement,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onDecrement()
+                    },
                     enabled = quantity > 0,
                     modifier = Modifier.size(42.dp),
                     shape = RoundedCornerShape(10.dp),
@@ -553,16 +632,33 @@ private fun ProductCard(
                     )
                 }
 
-                Text(
-                    text = "$quantity",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 6.dp)
-                )
+                AnimatedContent(
+                    targetState = quantity,
+                    transitionSpec = {
+                        if (targetState > initialState) {
+                            (slideInVertically(animationSpec = tween(180, easing = FastOutSlowInEasing)) { height -> height / 2 } + fadeIn()) togetherWith
+                                (slideOutVertically(animationSpec = tween(180, easing = FastOutSlowInEasing)) { height -> -height / 2 } + fadeOut())
+                        } else {
+                            (slideInVertically(animationSpec = tween(180, easing = FastOutSlowInEasing)) { height -> -height / 2 } + fadeIn()) togetherWith
+                                (slideOutVertically(animationSpec = tween(180, easing = FastOutSlowInEasing)) { height -> height / 2 } + fadeOut())
+                        }.using(SizeTransform(clip = false))
+                    },
+                    label = "product_qty"
+                ) { qty ->
+                    Text(
+                        text = "$qty",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp)
+                    )
+                }
 
                 // Plus Button
                 FilledIconButton(
-                    onClick = onIncrement,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onIncrement()
+                    },
                     modifier = Modifier.size(42.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = IconButtonDefaults.filledIconButtonColors(

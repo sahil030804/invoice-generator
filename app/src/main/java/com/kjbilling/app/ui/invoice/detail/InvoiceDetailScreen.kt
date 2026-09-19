@@ -196,16 +196,21 @@ fun InvoiceDetailScreen(
 
                 // Status Info
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatusChip(
-                        status = invoice.status.name,
-                        isSuccess = invoice.status == InvoiceStatus.GENERATED,
-                        isError = invoice.status == InvoiceStatus.CANCELLED
-                    )
-                    StatusChip(
-                        status = invoice.paymentStatus.name,
-                        isSuccess = invoice.paymentStatus == PaymentStatus.PAID,
-                        isError = invoice.paymentStatus == PaymentStatus.UNPAID
-                    )
+                    when {
+                        invoice.status == InvoiceStatus.CANCELLED -> {
+                            StatusChip(status = "CANCELLED", isSuccess = false, isError = true)
+                        }
+                        invoice.status == InvoiceStatus.DRAFT -> {
+                            StatusChip(status = "DRAFT", isSuccess = false, isError = false)
+                        }
+                        else -> {
+                            StatusChip(
+                                status = invoice.paymentStatus.name,
+                                isSuccess = invoice.paymentStatus == PaymentStatus.PAID,
+                                isError = invoice.paymentStatus == PaymentStatus.UNPAID
+                            )
+                        }
+                    }
                 }
 
                 // Items list

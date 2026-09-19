@@ -166,48 +166,52 @@ fun AppNavigation() {
                 val targetRoute = targetState.destination.route
                 val initialRoute = initialState.destination.route
                 if (targetRoute in topLevelRoutes && initialRoute in topLevelRoutes) {
-                    fadeIn(animationSpec = tween(220))
+                    fadeIn(animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing))
                 } else {
                     slideIntoContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                        animationSpec = tween(300)
-                    ) + fadeIn(animationSpec = tween(300))
+                        animationSpec = tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                        initialOffset = { (it * 0.15f).toInt() }
+                    ) + fadeIn(animationSpec = tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing))
                 }
             },
             exitTransition = {
                 val targetRoute = targetState.destination.route
                 val initialRoute = initialState.destination.route
                 if (targetRoute in topLevelRoutes && initialRoute in topLevelRoutes) {
-                    fadeOut(animationSpec = tween(180))
+                    fadeOut(animationSpec = tween(180, easing = androidx.compose.animation.core.FastOutSlowInEasing))
                 } else {
                     slideOutOfContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                        animationSpec = tween(300)
-                    ) + fadeOut(animationSpec = tween(300))
+                        animationSpec = tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                        targetOffset = { -(it * 0.15f).toInt() }
+                    ) + fadeOut(animationSpec = tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing))
                 }
             },
             popEnterTransition = {
                 val targetRoute = targetState.destination.route
                 val initialRoute = initialState.destination.route
                 if (targetRoute in topLevelRoutes && initialRoute in topLevelRoutes) {
-                    fadeIn(animationSpec = tween(220))
+                    fadeIn(animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing))
                 } else {
                     slideIntoContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.End,
-                        animationSpec = tween(300)
-                    ) + fadeIn(animationSpec = tween(300))
+                        animationSpec = tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                        initialOffset = { -(it * 0.15f).toInt() }
+                    ) + fadeIn(animationSpec = tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing))
                 }
             },
             popExitTransition = {
                 val targetRoute = targetState.destination.route
                 val initialRoute = initialState.destination.route
                 if (targetRoute in topLevelRoutes && initialRoute in topLevelRoutes) {
-                    fadeOut(animationSpec = tween(180))
+                    fadeOut(animationSpec = tween(180, easing = androidx.compose.animation.core.FastOutSlowInEasing))
                 } else {
                     slideOutOfContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.End,
-                        animationSpec = tween(300)
-                    ) + fadeOut(animationSpec = tween(300))
+                        animationSpec = tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                        targetOffset = { (it * 0.15f).toInt() }
+                    ) + fadeOut(animationSpec = tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing))
                 }
             }
         ) {

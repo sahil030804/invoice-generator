@@ -2,11 +2,14 @@ package com.kjbilling.app.ui.invoice.create
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -18,7 +21,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kjbilling.app.KJInvoiceApp
@@ -162,6 +170,84 @@ fun InvoiceCreateScreen(
                     )
                 }
 
+                // Invoice Discount Section
+                val invoiceDiscountValue by viewModel.invoiceDiscountValue.collectAsState()
+                val invoiceDiscountType by viewModel.invoiceDiscountType.collectAsState()
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Invoice Discount",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "Applies to entire bill",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = if (invoiceDiscountValue == "0") "" else invoiceDiscountValue,
+                                onValueChange = { viewModel.updateInvoiceDiscountValue(it.ifBlank { "0" }) },
+                                placeholder = { Text("0") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.width(90.dp)
+                            )
+
+                            // Toggle % / ₹
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Surface(
+                                    color = if (invoiceDiscountType == DiscountType.PERCENT) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.clickable { viewModel.updateInvoiceDiscountType(DiscountType.PERCENT) }
+                                ) {
+                                    Text(
+                                        text = "%",
+                                        color = if (invoiceDiscountType == DiscountType.PERCENT) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                                Surface(
+                                    color = if (invoiceDiscountType == DiscountType.AMOUNT) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.clickable { viewModel.updateInvoiceDiscountType(DiscountType.AMOUNT) }
+                                ) {
+                                    Text(
+                                        text = "₹",
+                                        color = if (invoiceDiscountType == DiscountType.AMOUNT) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Total Section
                 TotalCard(
                     subtotal = CurrencyFormatter.format(totals.subtotal),
@@ -251,6 +337,17 @@ fun InvoiceItemEditor(
 ) {
     var expanded by remember { mutableStateOf(item.name.isBlank()) }
     
+    val qty = item.quantity.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO
+    val price = item.unitPrice.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO
+    val itemGross = qty.multiply(price)
+    val discAmt = if (item.discountType == DiscountType.PERCENT) {
+        val pct = item.discountPercent.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO
+        itemGross.multiply(pct).divide(java.math.BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP)
+    } else {
+        item.discountAmount.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO
+    }
+    val itemNet = (itemGross.subtract(discAmt)).coerceAtLeast(java.math.BigDecimal.ZERO)
+
     Card(modifier = Modifier.fillMaxWidth().animateContentSize()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -261,16 +358,23 @@ fun InvoiceItemEditor(
                 Column(modifier = Modifier.weight(1f)) {
                     if (item.name.isNotBlank()) {
                         Text(item.name, style = MaterialTheme.typography.titleMedium)
-                        val qty = item.quantity.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO
-                        val price = item.unitPrice.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO
-                        Text("${item.quantity} x ${CurrencyFormatter.format(price)}")
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("${item.quantity} x ${CurrencyFormatter.format(price)}")
+                            if (discAmt > java.math.BigDecimal.ZERO) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "(-${CurrencyFormatter.format(discAmt)})",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
                     } else {
                         Text("New Item", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 
-                val total = (item.quantity.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO) * (item.unitPrice.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO)
-                Text(CurrencyFormatter.format(total), style = MaterialTheme.typography.titleMedium)
+                Text(CurrencyFormatter.format(itemNet), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
@@ -310,18 +414,66 @@ fun InvoiceItemEditor(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        AppTextField(
-                            value = item.discountPercent,
-                            onValueChange = { onUpdate(item.copy(discountPercent = it)) },
-                            label = "Disc %",
-                            modifier = Modifier.weight(1f)
-                        )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Discount input with % / ₹ toggle
+                        Row(
+                            modifier = Modifier.weight(1.3f),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AppTextField(
+                                value = if (item.discountType == DiscountType.PERCENT) item.discountPercent else item.discountAmount,
+                                onValueChange = {
+                                    if (item.discountType == DiscountType.PERCENT) {
+                                        onUpdate(item.copy(discountPercent = it))
+                                    } else {
+                                        onUpdate(item.copy(discountAmount = it))
+                                    }
+                                },
+                                label = if (item.discountType == DiscountType.PERCENT) "Disc %" else "Disc ₹",
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Surface(
+                                    color = if (item.discountType == DiscountType.PERCENT) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.clickable { onUpdate(item.copy(discountType = DiscountType.PERCENT)) }
+                                ) {
+                                    Text(
+                                        text = "%",
+                                        color = if (item.discountType == DiscountType.PERCENT) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                Surface(
+                                    color = if (item.discountType == DiscountType.AMOUNT) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.clickable { onUpdate(item.copy(discountType = DiscountType.AMOUNT)) }
+                                ) {
+                                    Text(
+                                        text = "₹",
+                                        color = if (item.discountType == DiscountType.AMOUNT) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+                        }
                         AppTextField(
                             value = item.gstRate,
                             onValueChange = { onUpdate(item.copy(gstRate = it)) },
                             label = "GST %",
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(0.9f)
                         )
                     }
                     AppTextField(
