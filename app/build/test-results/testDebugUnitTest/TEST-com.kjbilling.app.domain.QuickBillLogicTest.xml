@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.kjbilling.app.domain.QuickBillLogicTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-09-19T18:44:04" hostname="Sahil" time="0.026">
+  <properties/>
+  <testcase name="testIncrementAndDecrementQuantity" classname="com.kjbilling.app.domain.QuickBillLogicTest" time="0.0"/>
+  <testcase name="testCartMultipleItemsCalculation" classname="com.kjbilling.app.domain.QuickBillLogicTest" time="0.022"/>
+  <testcase name="testZeroQuantityCannotGenerateInvoice" classname="com.kjbilling.app.domain.QuickBillLogicTest" time="0.001"/>
+  <testcase name="testCartTotalCalculationWithTax" classname="com.kjbilling.app.domain.QuickBillLogicTest" time="0.001"/>
+  <testcase name="testDefaultCustomerIsWalkIn" classname="com.kjbilling.app.domain.QuickBillLogicTest" time="0.0"/>
+  <testcase name="testInterstateCustomerTaxDetermination" classname="com.kjbilling.app.domain.QuickBillLogicTest" time="0.0"/>
+  <testcase name="testQuickBillAlwaysCreatedAsPaid" classname="com.kjbilling.app.domain.QuickBillLogicTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

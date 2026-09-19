@@ -61,6 +61,7 @@ sealed class Screen(val route: String) {
     object InvoiceCreate : Screen("invoice_create?id={id}") {
         fun createRoute(id: Long? = null) = if (id != null) "invoice_create?id=$id" else "invoice_create"
     }
+    object QuickBill : Screen("quick_bill")
     object InvoiceHistory : Screen("invoice_history")
     object InvoiceDetail : Screen("invoice_detail/{id}") {
         fun createRoute(id: Long) = "invoice_detail/$id"
@@ -223,6 +224,7 @@ fun AppNavigation() {
             composable(Screen.Dashboard.route) {
                 DashboardScreen(
                     onNavigateToNewInvoice = { navController.navigate(Screen.InvoiceCreate.route) },
+                    onNavigateToQuickBill = { navController.navigate(Screen.QuickBill.route) },
                     onNavigateToInvoiceDetail = { id -> navController.navigate(Screen.InvoiceDetail.createRoute(id)) },
                     onNavigate = { route ->
                         when (route) {
@@ -232,6 +234,13 @@ fun AppNavigation() {
                             "settings" -> navController.navigate(Screen.Settings.route)
                         }
                     }
+                )
+            }
+
+            composable(Screen.QuickBill.route) {
+                com.kjbilling.app.ui.invoice.quick.QuickBillScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToDetail = { id -> navController.navigate(Screen.InvoiceDetail.createRoute(id)) }
                 )
             }
 
