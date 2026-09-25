@@ -16,6 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kjbilling.app.KJInvoiceApp
 import com.kjbilling.app.R
 import com.kjbilling.app.domain.validator.GstinValidator
+import com.kjbilling.app.ui.components.ActionButton
 import com.kjbilling.app.ui.components.AppTextField
 import com.kjbilling.app.ui.components.PrimaryButton
 import com.kjbilling.app.ui.components.SecondaryButton
@@ -96,26 +97,41 @@ fun OnboardingScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // weight(1f) splits the row; without it each button's internal
-                // fillMaxWidth collapses the sibling to zero width.
-                if (state.currentStep > 1) {
-                    SecondaryButton(
-                        text = "Back",
-                        onClick = { viewModel.previousStep() },
+            if (state.currentStep < 3) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // weight(1f) splits the row; without it each button's internal
+                    // fillMaxWidth collapses the sibling to zero width.
+                    if (state.currentStep > 1) {
+                        SecondaryButton(
+                            text = "Back",
+                            onClick = { viewModel.previousStep() },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    PrimaryButton(
+                        text = "Next",
+                        onClick = { viewModel.nextStep() },
                         modifier = Modifier.weight(1f)
                     )
                 }
-                PrimaryButton(
-                    text = if (state.currentStep < 3) "Next" else "Create First Invoice",
-                    onClick = {
-                        if (state.currentStep < 3) viewModel.nextStep() else viewModel.completeOnboarding()
-                    },
-                    modifier = Modifier.weight(1f)
-                )
+            } else {
+                // Last step: the long call-to-action gets the full width, Back sits underneath.
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ActionButton(
+                        text = "Create First Invoice",
+                        onClick = { viewModel.completeOnboarding() }
+                    )
+                    SecondaryButton(
+                        text = "Back",
+                        onClick = { viewModel.previousStep() }
+                    )
+                }
             }
         }
     }

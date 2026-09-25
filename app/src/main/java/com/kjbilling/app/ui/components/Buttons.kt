@@ -2,7 +2,6 @@ package com.kjbilling.app.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -27,7 +26,7 @@ fun PrimaryButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth().height(Dimens.ButtonHeight),
+        modifier = modifier.fillMaxWidth().heightIn(min = Dimens.ButtonHeight),
         enabled = enabled,
         shape = MaterialTheme.shapes.medium
     ) {
@@ -45,7 +44,7 @@ fun ActionButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth().height(Dimens.ButtonHeight),
+        modifier = modifier.fillMaxWidth().heightIn(min = Dimens.ButtonHeight),
         enabled = enabled,
         shape = MaterialTheme.shapes.medium,
         colors = ButtonDefaults.buttonColors(
@@ -66,7 +65,7 @@ fun SecondaryButton(
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth().height(Dimens.ButtonHeight),
+        modifier = modifier.fillMaxWidth().heightIn(min = Dimens.ButtonHeight),
         enabled = enabled,
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(
