@@ -1,88 +1,109 @@
 package com.kjbilling.app.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
 private val LightColorScheme = lightColorScheme(
-    primary = ElectricBlue600,
+    primary = IndigoPrimaryLight,
     onPrimary = Color.White,
-    primaryContainer = ElectricBlue50,
-    onPrimaryContainer = ElectricBlue900,
-    secondary = Slate600,
+    primaryContainer = IndigoContainerLight,
+    onPrimaryContainer = OnIndigoContainerLight,
+    inversePrimary = IndigoPrimaryDark,
+    secondary = SlateSecondaryLight,
     onSecondary = Color.White,
-    secondaryContainer = Slate100,
-    onSecondaryContainer = Slate800,
-    tertiary = Emerald500,
-    onTertiary = Color.White,
-    tertiaryContainer = Emerald100,
-    onTertiaryContainer = Emerald900,
-    surface = Color.White,
-    onSurface = Slate800,
-    surfaceVariant = Slate50,
-    onSurfaceVariant = Slate600,
-    background = Color.White,
-    onBackground = Slate800,
-    error = Rose500,
+    secondaryContainer = SlateContainerLight,
+    onSecondaryContainer = OnSlateContainerLight,
+    tertiary = SaffronLight,
+    onTertiary = OnSaffronLight,
+    tertiaryContainer = SaffronContainerLight,
+    onTertiaryContainer = OnSaffronContainerLight,
+    background = BackgroundLight,
+    onBackground = OnSurfaceLight,
+    surface = SurfaceLight,
+    onSurface = OnSurfaceLight,
+    surfaceVariant = SurfaceVariantLight,
+    onSurfaceVariant = OnSurfaceVariantLight,
+    surfaceTint = IndigoPrimaryLight,
+    inverseSurface = Color(0xFF2F3036),
+    inverseOnSurface = Color(0xFFF1F0F7),
+    error = ErrorLight,
     onError = Color.White,
-    errorContainer = Rose100,
-    onErrorContainer = Rose900,
-    outline = Slate200,
-    outlineVariant = Slate100
+    errorContainer = ErrorContainerLight,
+    onErrorContainer = OnErrorContainerLight,
+    outline = OutlineLight,
+    outlineVariant = OutlineVariantLight,
+    scrim = Color.Black,
+    surfaceBright = SurfaceLight,
+    surfaceDim = Color(0xFFDCDDE5),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF9F9FD),
+    surfaceContainer = Color(0xFFF1F2F8),
+    surfaceContainerHigh = Color(0xFFEBECF3),
+    surfaceContainerHighest = Color(0xFFE4E5EE)
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = ElectricBlue600,
-    onPrimary = Color.White,
-    primaryContainer = ElectricBlue900,
-    onPrimaryContainer = ElectricBlue100,
-    secondary = Slate400,
-    onSecondary = DeepSlate950,
-    secondaryContainer = Slate800,
-    onSecondaryContainer = Slate100,
-    tertiary = Emerald500,
-    onTertiary = DeepSlate950,
-    tertiaryContainer = Emerald900,
-    onTertiaryContainer = Emerald100,
-    surface = DeepSlate900,
-    onSurface = Slate100,
-    surfaceVariant = Slate800,
-    onSurfaceVariant = Slate400,
-    background = DeepSlate950,
-    onBackground = Slate100,
-    error = Rose500,
-    onError = Color.White,
-    errorContainer = Rose900,
-    onErrorContainer = Rose100,
-    outline = Slate700,
-    outlineVariant = Slate800
+    primary = IndigoPrimaryDark,
+    onPrimary = OnIndigoPrimaryDark,
+    primaryContainer = IndigoContainerDark,
+    onPrimaryContainer = OnIndigoContainerDark,
+    inversePrimary = IndigoPrimaryLight,
+    secondary = SlateSecondaryDark,
+    onSecondary = OnSlateSecondaryDark,
+    secondaryContainer = SlateContainerDark,
+    onSecondaryContainer = OnSlateContainerDark,
+    tertiary = SaffronDark,
+    onTertiary = OnSaffronDark,
+    tertiaryContainer = SaffronContainerDark,
+    onTertiaryContainer = OnSaffronContainerDark,
+    background = BackgroundDark,
+    onBackground = OnSurfaceDark,
+    surface = SurfaceDark,
+    onSurface = OnSurfaceDark,
+    surfaceVariant = SurfaceVariantDark,
+    onSurfaceVariant = OnSurfaceVariantDark,
+    surfaceTint = IndigoPrimaryDark,
+    inverseSurface = OnSurfaceDark,
+    inverseOnSurface = Color(0xFF2F3036),
+    error = ErrorDark,
+    onError = OnErrorDark,
+    errorContainer = ErrorContainerDark,
+    onErrorContainer = OnErrorContainerDark,
+    outline = OutlineDark,
+    outlineVariant = OutlineVariantDark,
+    scrim = Color.Black,
+    surfaceBright = Color(0xFF393940),
+    surfaceDim = BackgroundDark,
+    surfaceContainerLowest = Color(0xFF0E0E13),
+    surfaceContainerLow = Color(0xFF1B1B21),
+    surfaceContainer = Color(0xFF1F1F25),
+    surfaceContainerHigh = Color(0xFF292A31),
+    surfaceContainerHighest = Color(0xFF34343B)
 )
 
+/**
+ * App theme. Fixed brand palette (no wallpaper colours) so status colours always mean the same.
+ * [darkTheme] comes from the in-app System/Light/Dark choice (see MainActivity).
+ */
 @Composable
 fun KJInvoiceTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val extendedColors = if (darkTheme) DarkExtendedColors else LightExtendedColors
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
-        content = content
-    )
+    CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = AppTypography,
+            shapes = AppShapes,
+            content = content
+        )
+    }
 }

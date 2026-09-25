@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72" width="512" height="512">
+  <title>Parchi</title>
+  <rect x="18" y="18" width="72" height="72" rx="16" fill="#3730A3"/>
+  <g transform="translate(54 54) scale(0.86) translate(-54 -54)">
+  <path d="M35,26 H63 A4,4 0 0 1 67,30 V80 L64,77 L61,80 L58,77 L55,80 L52,77 L49,80 L46,77 L43,80 L40,77 L37,80 L34,77 L31,80 V30 A4,4 0 0 1 35,26 Z" fill="#FFFFFF"/>
+  <path d="M37,36 H59" stroke="#C7C4FF" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M37,44 H52" stroke="#C7C4FF" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M57,68 a10,10 0 1 0 20,0 a10,10 0 1 0 -20,0 Z" fill="#F59E0B" stroke="#3730A3" stroke-width="2.5"/>
+  <path d="M62.4,68.2 L65.6,71.4 L71.8,64.9" fill="none" stroke="#1E1B4B" stroke-width="3.0" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

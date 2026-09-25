@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kjbilling.app.KJInvoiceApp
 import com.kjbilling.app.domain.model.BusinessProfile
+import com.kjbilling.app.ui.components.AppCard
 import com.kjbilling.app.ui.components.AppTextField
 import com.kjbilling.app.ui.components.PrimaryButton
 import kotlinx.coroutines.Dispatchers
@@ -218,7 +219,7 @@ private fun LogoSection(viewModel: SettingsViewModel) {
         }
     }
 
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+    AppCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -239,7 +240,7 @@ private fun LogoSection(viewModel: SettingsViewModel) {
                             contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize().padding(4.dp)
                         )
-                        else -> Text("No logo", style = MaterialTheme.typography.labelSmall)
+                        else -> Text("No logo", style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }

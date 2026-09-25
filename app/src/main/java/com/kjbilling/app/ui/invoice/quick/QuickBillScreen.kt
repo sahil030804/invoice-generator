@@ -15,20 +15,18 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,6 +37,9 @@ import com.kjbilling.app.domain.model.Product
 import com.kjbilling.app.pdf.InvoicePrintHelper
 import com.kjbilling.app.pdf.InvoiceShareHelper
 import com.kjbilling.app.pdf.PdfDownloadHelper
+import com.kjbilling.app.ui.components.appTextFieldColors
+import com.kjbilling.app.ui.theme.Dimens
+import com.kjbilling.app.ui.theme.ext
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,12 +73,16 @@ fun QuickBillScreen(
                         Text(
                             text = "⚡ Quick Counter Bill",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = "Senior Friendly • 1-Tap Billing",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 },
@@ -101,85 +106,39 @@ fun QuickBillScreen(
         },
         bottomBar = {
             Surface(
-                tonalElevation = 8.dp,
+                tonalElevation = 0.dp,
                 shadowElevation = 8.dp,
                 color = MaterialTheme.colorScheme.surface
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
+                val haptic = LocalHapticFeedback.current
+                val onGenerate = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    viewModel.generateBill()
+                }
+                val canGenerate = cartSummary.totalCount > 0 && !isGenerating
+                // Very large font sizes: stack total above a full-width button so neither gets squeezed.
+                val stacked = LocalDensity.current.fontScale >= STACKED_BAR_FONT_SCALE
+
+                if (stacked) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.Sm)
+                    ) {
+                        CartSummaryText(cartSummary)
+                        GenerateBillButton(canGenerate, isGenerating, onGenerate, Modifier.fillMaxWidth())
+                    }
+                } else {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
-                            AnimatedContent(
-                                targetState = cartSummary.totalCount,
-                                transitionSpec = {
-                                    (slideInVertically { height -> height / 2 } + fadeIn()) togetherWith
-                                        (slideOutVertically { height -> -height / 2 } + fadeOut())
-                                },
-                                label = "items_count"
-                            ) { count ->
-                                Text(
-                                    text = "$count ${if (count == 1) "item" else "items"} selected",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            AnimatedContent(
-                                targetState = cartSummary.grandTotal,
-                                transitionSpec = {
-                                    if (targetState > initialState) {
-                                        (slideInVertically(animationSpec = tween(220, easing = FastOutSlowInEasing)) { height -> height } + fadeIn()) togetherWith
-                                            (slideOutVertically(animationSpec = tween(220, easing = FastOutSlowInEasing)) { height -> -height } + fadeOut())
-                                    } else {
-                                        (slideInVertically(animationSpec = tween(220, easing = FastOutSlowInEasing)) { height -> -height } + fadeIn()) togetherWith
-                                            (slideOutVertically(animationSpec = tween(220, easing = FastOutSlowInEasing)) { height -> height } + fadeOut())
-                                    }.using(SizeTransform(clip = false))
-                                },
-                                label = "grand_total"
-                            ) { total ->
-                                Text(
-                                    text = CurrencyFormatter.format(total),
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Black,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        val haptic = LocalHapticFeedback.current
-                        Button(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                viewModel.generateBill()
-                            },
-                            enabled = cartSummary.totalCount > 0 && !isGenerating,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier
-                                .height(52.dp)
-                                .widthIn(min = 160.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF10B981), // Fresh green
-                                contentColor = Color.White
-                            )
-                        ) {
-                            if (isGenerating) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Generate Bill", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            }
-                        }
+                        CartSummaryText(cartSummary, Modifier.weight(1f).padding(end = Dimens.Sm))
+                        GenerateBillButton(canGenerate, isGenerating, onGenerate)
                     }
                 }
             }
@@ -214,7 +173,8 @@ fun QuickBillScreen(
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = MaterialTheme.shapes.medium,
+                colors = appTextFieldColors()
             )
 
             if (error != null) {
@@ -337,13 +297,13 @@ fun QuickBillScreen(
                         modifier = Modifier
                             .size(90.dp)
                             .scale(checkmarkScale)
-                            .background(Color(0xFF10B981).copy(alpha = 0.15f), CircleShape),
+                            .background(MaterialTheme.ext.paid.container, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Filled.CheckCircle,
                             contentDescription = "Success",
-                            tint = Color(0xFF10B981),
+                            tint = MaterialTheme.ext.paid.text,
                             modifier = Modifier.size(64.dp)
                         )
                     }
@@ -353,7 +313,6 @@ fun QuickBillScreen(
                     Text(
                         text = "Bill ${invoice.invoiceNumber} Ready!",
                         style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Black,
                         textAlign = TextAlign.Center
                     )
 
@@ -369,8 +328,7 @@ fun QuickBillScreen(
 
                     Text(
                         text = "${CurrencyFormatter.format(invoice.grandTotal)} (Paid in Cash)",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
 
@@ -392,15 +350,15 @@ fun QuickBillScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF25D366), // WhatsApp Green
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.ext.whatsApp,
+                            contentColor = MaterialTheme.ext.onWhatsApp
                         )
                     ) {
                         Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(22.dp))
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text("SEND ON WHATSAPP", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Spacer(modifier = Modifier.width(Dimens.Sm))
+                        Text("SEND ON WHATSAPP", style = MaterialTheme.typography.labelLarge)
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -414,15 +372,15 @@ fun QuickBillScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
                         Icon(Icons.Filled.Print, contentDescription = null, modifier = Modifier.size(22.dp))
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text("PRINT RECEIPT", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Spacer(modifier = Modifier.width(Dimens.Sm))
+                        Text("PRINT RECEIPT", style = MaterialTheme.typography.labelLarge)
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -445,13 +403,13 @@ fun QuickBillScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(54.dp),
-                        shape = RoundedCornerShape(14.dp),
+                            .height(Dimens.ButtonHeight),
+                        shape = MaterialTheme.shapes.medium,
                         border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
                     ) {
                         Icon(Icons.Filled.ArrowDropDown, contentDescription = null, modifier = Modifier.size(22.dp))
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text("DOWNLOAD PDF", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Spacer(modifier = Modifier.width(Dimens.Sm))
+                        Text("DOWNLOAD PDF", style = MaterialTheme.typography.labelLarge)
                     }
 
                     Spacer(modifier = Modifier.height(28.dp))
@@ -464,12 +422,16 @@ fun QuickBillScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(14.dp)
+                            .height(Dimens.ButtonHeight),
+                        shape = MaterialTheme.shapes.medium,
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.ext.action,
+                            contentColor = MaterialTheme.ext.onAction
+                        )
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(22.dp))
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text("⚡ START NEXT BILL", fontWeight = FontWeight.Black, fontSize = 16.sp)
+                        Spacer(modifier = Modifier.width(Dimens.Sm))
+                        Text("⚡ START NEXT BILL", style = MaterialTheme.typography.labelLarge)
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -502,8 +464,7 @@ private fun CustomerSelectionSection(
     ) {
         Text(
             text = "CUSTOMER (1-TAP SELECT)",
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
@@ -528,15 +489,8 @@ private fun CustomerSelectionSection(
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
                     },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color(0xFF10B981).copy(alpha = 0.15f),
-                        selectedLabelColor = Color(0xFF047857)
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = isSelected,
-                        borderColor = if (isSelected) Color(0xFF10B981) else MaterialTheme.colorScheme.outline
-                    )
+                    colors = customerChipColors(),
+                    border = customerChipBorder(isSelected)
                 )
             }
 
@@ -555,10 +509,8 @@ private fun CustomerSelectionSection(
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
                     },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    colors = customerChipColors(),
+                    border = customerChipBorder(isSelected)
                 )
             }
         }
@@ -582,38 +534,31 @@ private fun ProductCard(
     )
     val animatedContainerColor by animateColorAsState(
         targetValue = if (isSelected) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
         } else {
             MaterialTheme.colorScheme.surface
         },
         animationSpec = tween(220, easing = FastOutSlowInEasing),
         label = "card_container"
     )
-    val animatedElevation by animateDpAsState(
-        targetValue = if (isSelected) 4.dp else 1.dp,
-        animationSpec = tween(220, easing = FastOutSlowInEasing),
-        label = "card_elevation"
-    )
-
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = animatedContainerColor),
         border = BorderStroke(
             width = if (isSelected) 2.dp else 1.dp,
             color = animatedBorderColor
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = animatedElevation)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
+                .padding(Dimens.Md)
         ) {
             Text(
                 text = product.name,
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 minLines = 2
@@ -624,7 +569,6 @@ private fun ProductCard(
             Text(
                 text = CurrencyFormatter.format(product.sellingPrice),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary
             )
 
@@ -643,17 +587,17 @@ private fun ProductCard(
                         onDecrement()
                     },
                     enabled = quantity > 0,
-                    modifier = Modifier.size(42.dp),
-                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.size(Dimens.Stepper),
+                    shape = MaterialTheme.shapes.small,
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = if (quantity > 0) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (quantity > 0) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 ) {
                     Text(
                         text = "−",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Black
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
@@ -684,8 +628,8 @@ private fun ProductCard(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onIncrement()
                     },
-                    modifier = Modifier.size(42.dp),
-                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.size(Dimens.Stepper),
+                    shape = MaterialTheme.shapes.small,
                     colors = IconButtonDefaults.filledIconButtonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
@@ -693,11 +637,104 @@ private fun ProductCard(
                 ) {
                     Text(
                         text = "+",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Black
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun customerChipColors() = FilterChipDefaults.filterChipColors(
+    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+)
+
+@Composable
+private fun customerChipBorder(selected: Boolean) = FilterChipDefaults.filterChipBorder(
+    enabled = true,
+    selected = selected,
+    borderColor = MaterialTheme.colorScheme.outline,
+    selectedBorderColor = MaterialTheme.colorScheme.primary,
+    selectedBorderWidth = 1.5.dp
+)
+
+private const val STACKED_BAR_FONT_SCALE = 1.5f
+
+@Composable
+private fun CartSummaryText(cartSummary: QuickCartSummary, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        AnimatedContent(
+            targetState = cartSummary.totalCount,
+            transitionSpec = {
+                (slideInVertically { height -> height / 2 } + fadeIn()) togetherWith
+                    (slideOutVertically { height -> -height / 2 } + fadeOut())
+            },
+            label = "items_count"
+        ) { count ->
+            Text(
+                text = "$count ${if (count == 1) "item" else "items"} selected",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        AnimatedContent(
+            targetState = cartSummary.grandTotal,
+            transitionSpec = {
+                if (targetState > initialState) {
+                    (slideInVertically(animationSpec = tween(220, easing = FastOutSlowInEasing)) { height -> height } + fadeIn()) togetherWith
+                        (slideOutVertically(animationSpec = tween(220, easing = FastOutSlowInEasing)) { height -> -height } + fadeOut())
+                } else {
+                    (slideInVertically(animationSpec = tween(220, easing = FastOutSlowInEasing)) { height -> -height } + fadeIn()) togetherWith
+                        (slideOutVertically(animationSpec = tween(220, easing = FastOutSlowInEasing)) { height -> height } + fadeOut())
+                }.using(SizeTransform(clip = false))
+            },
+            label = "grand_total"
+        ) { total ->
+            Text(
+                text = CurrencyFormatter.format(total),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+private fun GenerateBillButton(
+    enabled: Boolean,
+    isGenerating: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        shape = MaterialTheme.shapes.medium,
+        modifier = modifier.heightIn(min = Dimens.ButtonHeight),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.ext.action,
+            contentColor = MaterialTheme.ext.onAction
+        )
+    ) {
+        if (isGenerating) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = MaterialTheme.ext.onAction,
+                strokeWidth = 2.dp
+            )
+        } else {
+            Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(22.dp))
+            Spacer(modifier = Modifier.width(Dimens.Sm))
+            Text(
+                "Generate Bill",
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                softWrap = false
+            )
         }
     }
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="window_bg">#131318</color>
+    <!-- Deeper indigo in dark mode so the splash doesn't glare. -->
+    <color name="splash_bg">#1E1B4B</color>
+</resources>

@@ -60,12 +60,12 @@ fun OnboardingScreen(
                 modifier = Modifier.padding(bottom = 12.dp)
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.app_logo),
-                    contentDescription = "PrimeInvoice Logo",
+                    painter = painterResource(id = R.drawable.parchi_logo),
+                    contentDescription = "Parchi Logo",
                     modifier = Modifier.size(28.dp)
                 )
                 Text(
-                    text = "PrimeInvoice",
+                    text = "Parchi",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary

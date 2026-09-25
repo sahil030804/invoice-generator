@@ -26,7 +26,13 @@ import com.kjbilling.app.domain.formatter.CurrencyFormatter
 import com.kjbilling.app.domain.model.Invoice
 import com.kjbilling.app.domain.model.InvoiceStatus
 import com.kjbilling.app.domain.model.PaymentStatus
+import androidx.compose.foundation.shape.CircleShape
+import com.kjbilling.app.ui.components.AppCard
 import com.kjbilling.app.ui.components.EmptyState
+import com.kjbilling.app.ui.components.StatusBadge
+import com.kjbilling.app.ui.components.statusToneFor
+import com.kjbilling.app.ui.theme.Dimens
+import com.kjbilling.app.ui.theme.ext
 import com.kjbilling.app.ui.components.LoadingState
 import java.time.LocalTime
 
@@ -51,13 +57,13 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.app_logo),
-                            contentDescription = "PrimeInvoice Logo",
+                            painter = painterResource(id = R.drawable.parchi_logo),
+                            contentDescription = "Parchi Logo",
                             modifier = Modifier.size(34.dp)
                         )
                         Column {
                             Text(
-                                text = "PrimeInvoice",
+                                text = "Parchi",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -80,7 +86,9 @@ fun DashboardScreen(
             ExtendedFloatingActionButton(
                 onClick = onNavigateToNewInvoice,
                 icon = { Icon(Icons.Filled.Add, "New Invoice") },
-                text = { Text("New Invoice") }
+                text = { Text("New Invoice", style = MaterialTheme.typography.labelLarge) },
+                containerColor = MaterialTheme.ext.action,
+                contentColor = MaterialTheme.ext.onAction
             )
         }
     ) { innerPadding ->
@@ -91,24 +99,25 @@ fun DashboardScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(horizontal = Dimens.ScreenPadding),
+                verticalArrangement = Arrangement.spacedBy(Dimens.ListGap)
             ) {
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
                     Card(
                         onClick = onNavigateToQuickBill,
                         modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        shape = MaterialTheme.shapes.large,
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primary
+                            containerColor = MaterialTheme.ext.hero,
+                            contentColor = MaterialTheme.ext.onHero
                         ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(horizontal = Dimens.Lg, vertical = Dimens.Xl),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -119,35 +128,33 @@ fun DashboardScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(46.dp)
-                                        .background(Color.White.copy(alpha = 0.2f), androidx.compose.foundation.shape.CircleShape),
+                                        .size(52.dp)
+                                        .background(MaterialTheme.ext.action, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Filled.AddCircle,
+                                        imageVector = Icons.Filled.Add,
                                         contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(28.dp)
+                                        tint = MaterialTheme.ext.onAction,
+                                        modifier = Modifier.size(30.dp)
                                     )
                                 }
                                 Column {
                                     Text(
                                         text = "⚡ QUICK COUNTER BILL",
                                         style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Black,
-                                        color = Color.White
+                                        fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = "Zero Typing • 1-Tap Sale for Seniors",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = Color.White.copy(alpha = 0.85f)
+                                        color = MaterialTheme.ext.onHero.copy(alpha = 0.9f)
                                     )
                                 }
                             }
                             Icon(
                                 imageVector = Icons.Filled.ArrowForward,
-                                contentDescription = null,
-                                tint = Color.White
+                                contentDescription = null
                             )
                         }
                     }
@@ -156,7 +163,7 @@ fun DashboardScreen(
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.ListGap)
                     ) {
                         StatCard(
                             title = "Today's Sales",
@@ -167,7 +174,7 @@ fun DashboardScreen(
                             title = "Pending",
                             amount = CurrencyFormatter.format(state.pendingAmount),
                             modifier = Modifier.weight(1f),
-                            amountColor = MaterialTheme.colorScheme.error
+                            amountColor = MaterialTheme.ext.unpaid.text
                         )
                     }
                 }
@@ -175,8 +182,8 @@ fun DashboardScreen(
                 item {
                     Text(
                         text = "Recent Invoices",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(top = Dimens.Md, bottom = Dimens.Xs)
                     )
                 }
 
@@ -211,12 +218,16 @@ fun StatCard(
     modifier: Modifier = Modifier,
     amountColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
-    Card(modifier = modifier) {
+    AppCard(modifier = modifier) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(Dimens.CardPadding)
         ) {
-            Text(text = title, style = MaterialTheme.typography.bodyMedium)
-            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(Dimens.Sm))
             Text(
                 text = amount,
                 style = MaterialTheme.typography.titleLarge,
@@ -231,7 +242,7 @@ fun InvoiceCard(
     invoice: Invoice,
     onClick: () -> Unit
 ) {
-    Card(
+    AppCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
@@ -239,7 +250,7 @@ fun InvoiceCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(Dimens.CardPadding),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -265,34 +276,24 @@ fun InvoiceCard(
                     text = CurrencyFormatter.format(invoice.grandTotal),
                     style = MaterialTheme.typography.titleMedium
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(Dimens.Sm))
                 StatusChip(status = invoice.status, paymentStatus = invoice.paymentStatus)
             }
         }
     }
 }
 
+/** Dashboard wording is title case ("Paid", "Unpaid", ...); tone/icon come from the shared badge. */
 @Composable
 fun StatusChip(status: InvoiceStatus, paymentStatus: PaymentStatus) {
-    val (text, color) = when {
-        status == InvoiceStatus.CANCELLED -> "Cancelled" to Color.Red
-        status == InvoiceStatus.DRAFT -> "Draft" to Color.Gray
-        paymentStatus == PaymentStatus.PAID -> "Paid" to Color(0xFF4CAF50)
-        paymentStatus == PaymentStatus.PARTIAL -> "Partial" to Color(0xFFFFB300)
-        else -> "Unpaid" to Color(0xFFFF9800)
+    val label = when {
+        status == InvoiceStatus.CANCELLED -> "Cancelled"
+        status == InvoiceStatus.DRAFT -> "Draft"
+        paymentStatus == PaymentStatus.PAID -> "Paid"
+        paymentStatus == PaymentStatus.PARTIAL -> "Partial"
+        else -> "Unpaid"
     }
-
-    Surface(
-        color = color.copy(alpha = 0.1f),
-        shape = MaterialTheme.shapes.small
-    ) {
-        Text(
-            text = text,
-            color = color,
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
-    }
+    StatusBadge(label = label, tone = statusToneFor(status, paymentStatus))
 }
 
 private fun getGreetingMessage(): String {

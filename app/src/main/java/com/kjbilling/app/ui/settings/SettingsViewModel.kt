@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.kjbilling.app.data.backup.BackupManager
+import com.kjbilling.app.data.prefs.ThemePreferences
 import com.kjbilling.app.data.repository.AppSettingsRepository
 import com.kjbilling.app.data.repository.BusinessProfileRepository
 import com.kjbilling.app.data.storage.LogoStorage
@@ -13,6 +14,7 @@ import com.kjbilling.app.di.AppContainer
 import com.kjbilling.app.domain.model.AppSettings
 import com.kjbilling.app.domain.model.BusinessProfile
 import com.kjbilling.app.domain.model.TaxType
+import com.kjbilling.app.domain.model.ThemeMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,8 +35,15 @@ class SettingsViewModel(
     private val businessProfileRepository: BusinessProfileRepository,
     private val appSettingsRepository: AppSettingsRepository,
     private val logoStorage: LogoStorage,
-    private val backupManager: BackupManager
+    private val backupManager: BackupManager,
+    private val themePreferences: ThemePreferences
 ) : ViewModel() {
+
+    val themeMode: StateFlow<ThemeMode> = themePreferences.mode
+
+    fun setThemeMode(mode: ThemeMode) {
+        themePreferences.setMode(mode)
+    }
 
     private val _lastBackupAt = MutableStateFlow(backupManager.lastBackupAt())
     val lastBackupAt: StateFlow<Long?> = _lastBackupAt.asStateFlow()
@@ -203,7 +212,8 @@ class SettingsViewModel(
                     container.businessProfileRepository,
                     container.appSettingsRepository,
                     container.logoStorage,
-                    container.backupManager
+                    container.backupManager,
+                    container.themePreferences
                 ) as T
             }
         }

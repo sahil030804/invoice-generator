@@ -23,4 +23,5 @@ class AppContainer(context: Context) {
     val backupManager by lazy { com.kjbilling.app.data.backup.BackupManager(context, logoStorage) }
     val invoicePdfGenerator by lazy { com.kjbilling.app.pdf.InvoicePdfGenerator(context, logoStorage) }
     val invoiceShareHelper = com.kjbilling.app.pdf.InvoiceShareHelper
+    val themePreferences by lazy { com.kjbilling.app.data.prefs.ThemePreferences(context) }
 }

@@ -2,48 +2,79 @@ package com.kjbilling.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Primary - Electric Blue (Matching Invoice Template 08)
-val ElectricBlue600 = Color(0xFF2563EB)
-val ElectricBlue700 = Color(0xFF1D4ED8)
-val ElectricBlue800 = Color(0xFF1E40AF)
-val ElectricBlue50 = Color(0xFFEFF6FF)
-val ElectricBlue100 = Color(0xFFDBEAFE)
-val ElectricBlue900 = Color(0xFF1E3A8A)
+// Indigo + Saffron palette. Contrast checked against WCAG AA (≥4.5:1 text, ≥7:1 main text/amounts).
+// Saffron is a FILL colour only; saffron-coloured text uses ActionText* instead.
 
-// Neutrals - Modern Slate
-val DeepSlate950 = Color(0xFF020617)
-val DeepSlate900 = Color(0xFF0F172A)
-val Slate800 = Color(0xFF1E293B)
-val Slate700 = Color(0xFF334155)
-val Slate600 = Color(0xFF475569)
-val Slate500 = Color(0xFF64748B)
-val Slate400 = Color(0xFF94A3B8)
-val Slate300 = Color(0xFFCBD5E1)
-val Slate200 = Color(0xFFE2E8F0)
-val Slate100 = Color(0xFFF1F5F9)
-val Slate50 = Color(0xFFF8FAFC)
-
-// Semantic Status
-val Emerald500 = Color(0xFF10B981)
-val Emerald100 = Color(0xFFD1FAE5)
-val Emerald900 = Color(0xFF065F46)
-
-val Amber500 = Color(0xFFF59E0B)
-val Amber100 = Color(0xFFFEF3C7)
-val Amber900 = Color(0xFF78350F)
-
-val Rose500 = Color(0xFFEF4444)
-val Rose100 = Color(0xFFFFE4E6)
-val Rose900 = Color(0xFF881337)
-
-// Backward-compatible aliases
-val Blue600 = ElectricBlue600
-val Blue700 = ElectricBlue700
-val Blue800 = ElectricBlue800
-val Indigo400 = Slate600
+// ---- Light ----
+val IndigoPrimaryLight = Color(0xFF3730A3)
+val IndigoContainerLight = Color(0xFFE0E7FF)
+val OnIndigoContainerLight = Color(0xFF1E1B4B)
+val SlateSecondaryLight = Color(0xFF475569)
+val SlateContainerLight = Color(0xFFE2E8F0)
+val OnSlateContainerLight = Color(0xFF1E293B)
+val SaffronLight = Color(0xFFF59E0B)
+val OnSaffronLight = Color(0xFF1C1917)
+val SaffronContainerLight = Color(0xFFFEF3C7)
+val OnSaffronContainerLight = Color(0xFF78350F)
+val BackgroundLight = Color(0xFFF7F8FC)
 val SurfaceLight = Color(0xFFFFFFFF)
-val SurfaceDark = DeepSlate900
-val GreenPaid = Emerald500
-val OrangePending = Amber500
-val RedCancelled = Rose500
-val GrayDraft = Slate500
+val OnSurfaceLight = Color(0xFF1B1C22)
+val SurfaceVariantLight = Color(0xFFEEF0F7)
+val OnSurfaceVariantLight = Color(0xFF44474F)
+val OutlineLight = Color(0xFF757780)
+val OutlineVariantLight = Color(0xFFD9DBE3)
+val ErrorLight = Color(0xFFB91C1C)
+val ErrorContainerLight = Color(0xFFFEE2E2)
+val OnErrorContainerLight = Color(0xFF7F1D1D)
+val ActionTextLight = Color(0xFFB45309)
+
+// ---- Dark ----
+val IndigoPrimaryDark = Color(0xFFC7C4FF)
+val OnIndigoPrimaryDark = Color(0xFF1A1466)
+val IndigoContainerDark = Color(0xFF2F2A87)
+val OnIndigoContainerDark = Color(0xFFE2DFFF)
+val SlateSecondaryDark = Color(0xFFCBD5E1)
+val OnSlateSecondaryDark = Color(0xFF1E293B)
+val SlateContainerDark = Color(0xFF334155)
+val OnSlateContainerDark = Color(0xFFE2E8F0)
+val SaffronDark = Color(0xFFFFB95C)
+val OnSaffronDark = Color(0xFF2A1700)
+val SaffronContainerDark = Color(0xFF5C3A00)
+val OnSaffronContainerDark = Color(0xFFFFDDB3)
+val BackgroundDark = Color(0xFF131318)
+val SurfaceDark = Color(0xFF1E1F25)
+val OnSurfaceDark = Color(0xFFE3E2E9)
+val SurfaceVariantDark = Color(0xFF2A2B33)
+val OnSurfaceVariantDark = Color(0xFFC4C6D0)
+val OutlineDark = Color(0xFF8E9099)
+val OutlineVariantDark = Color(0xFF3A3B44)
+val ErrorDark = Color(0xFFFCA5A5)
+val OnErrorDark = Color(0xFF450A0A)
+val ErrorContainerDark = Color(0xFF7F1D1D)
+val OnErrorContainerDark = Color(0xFFFECACA)
+val ActionTextDark = Color(0xFFFFB95C)
+
+// ---- Status (container / on-container / standalone text) ----
+val PaidContainerLight = Color(0xFFDCFCE7)
+val OnPaidContainerLight = Color(0xFF14532D)
+val PaidTextLight = Color(0xFF15803D)
+val PartialContainerLight = Color(0xFFFEF3C7)
+val OnPartialContainerLight = Color(0xFF92400E)
+val PartialTextLight = Color(0xFFA16207)
+val UnpaidContainerLight = Color(0xFFFEE2E2)
+val OnUnpaidContainerLight = Color(0xFF7F1D1D)
+val UnpaidTextLight = Color(0xFFB91C1C)
+
+val PaidContainerDark = Color(0xFF14532D)
+val OnPaidContainerDark = Color(0xFFBBF7D0)
+val PaidTextDark = Color(0xFF86EFAC)
+val PartialContainerDark = Color(0xFF78350F)
+val OnPartialContainerDark = Color(0xFFFDE68A)
+val PartialTextDark = Color(0xFFFCD34D)
+val UnpaidContainerDark = Color(0xFF7F1D1D)
+val OnUnpaidContainerDark = Color(0xFFFECACA)
+val UnpaidTextDark = Color(0xFFFCA5A5)
+
+// ---- Brand of third parties ----
+val WhatsAppGreen = Color(0xFF25D366)
+val OnWhatsAppGreen = Color(0xFF0B1F14)

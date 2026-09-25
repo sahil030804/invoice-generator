@@ -16,6 +16,9 @@ import com.kjbilling.app.domain.formatter.CurrencyFormatter
 import com.kjbilling.app.domain.model.InvoiceStatus
 import com.kjbilling.app.domain.model.Invoice
 import com.kjbilling.app.domain.model.PaymentStatus
+import com.kjbilling.app.ui.components.AppCard
+import com.kjbilling.app.ui.components.InvoiceStatusBadge
+import com.kjbilling.app.ui.theme.Dimens
 import com.kjbilling.app.ui.components.EmptyState
 import com.kjbilling.app.ui.components.SearchBar
 import java.text.SimpleDateFormat
@@ -58,8 +61,8 @@ fun InvoiceHistoryScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(horizontal = Dimens.ScreenPadding, vertical = Dimens.Sm),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.ListGap)
                 ) {
                     items(invoices, key = { it.id }) { invoice ->
                         InvoiceCard(
@@ -81,7 +84,7 @@ fun InvoiceCard(
     val formatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
     val dateString = formatter.format(Date(invoice.invoiceDate))
 
-    Card(
+    AppCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
@@ -128,49 +131,9 @@ fun InvoiceCard(
                 )
                 
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    when {
-                        invoice.status == InvoiceStatus.CANCELLED -> {
-                            StatusChip(status = "CANCELLED", isSuccess = false, isError = true)
-                        }
-                        invoice.status == InvoiceStatus.DRAFT -> {
-                            StatusChip(status = "DRAFT", isSuccess = false, isError = false)
-                        }
-                        else -> {
-                            StatusChip(
-                                status = invoice.paymentStatus.name,
-                                isSuccess = invoice.paymentStatus == PaymentStatus.PAID,
-                                isError = invoice.paymentStatus == PaymentStatus.UNPAID
-                            )
-                        }
-                    }
+                    InvoiceStatusBadge(status = invoice.status, paymentStatus = invoice.paymentStatus)
                 }
             }
         }
-    }
-}
-
-@Composable
-fun StatusChip(status: String, isSuccess: Boolean, isError: Boolean) {
-    val containerColor = when {
-        isSuccess -> MaterialTheme.colorScheme.primaryContainer
-        isError -> MaterialTheme.colorScheme.errorContainer
-        else -> MaterialTheme.colorScheme.surfaceVariant
-    }
-    val contentColor = when {
-        isSuccess -> MaterialTheme.colorScheme.onPrimaryContainer
-        isError -> MaterialTheme.colorScheme.onErrorContainer
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    
-    Surface(
-        color = containerColor,
-        shape = MaterialTheme.shapes.small
-    ) {
-        Text(
-            text = status,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = contentColor
-        )
     }
 }

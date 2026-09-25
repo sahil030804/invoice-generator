@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -51,7 +52,8 @@ fun AppTextField(
         enabled = enabled,
         readOnly = readOnly,
         trailingIcon = trailingIcon,
-        shape = MaterialTheme.shapes.medium
+        shape = MaterialTheme.shapes.medium,
+        colors = appTextFieldColors()
     )
 }
 
@@ -124,6 +126,17 @@ fun SearchBar(
         placeholder = { Text(placeholder) },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
         singleLine = true,
-        shape = MaterialTheme.shapes.large
+        shape = MaterialTheme.shapes.medium,
+        colors = appTextFieldColors()
     )
 }
+
+/** White/surface fields with a clear outline, so inputs stand out on the tinted background. */
+@Composable
+fun appTextFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedContainerColor = MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+)

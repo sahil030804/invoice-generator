@@ -5,6 +5,8 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
@@ -18,7 +20,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.kjbilling.app.ui.theme.Dimens
+import com.kjbilling.app.ui.theme.ext
 import com.kjbilling.app.KJInvoiceApp
 import com.kjbilling.app.domain.formatter.CurrencyFormatter
 import com.kjbilling.app.domain.model.Invoice
@@ -99,96 +104,105 @@ fun InvoiceShareScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Column(
+        // Scrollable but still vertically centred when it fits, so large font sizes never cut off buttons.
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = "Success",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(100.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Text(
-                text = "Invoice Generated Successfully!",
-                style = MaterialTheme.typography.titleLarge
-            )
-
-            if (invoice != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "$invoiceNumber • $customerName • $grandTotal",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            if (loadFailed) {
-                Spacer(modifier = Modifier.height(16.dp))
-                ErrorState(message = "Could not load invoice details, but the PDF was saved.")
-            }
-
-            if (!fileExists) {
-                Spacer(modifier = Modifier.height(16.dp))
-                ErrorState(message = "PDF file not found. Regenerate it from invoice details.")
-            }
-            
-            Spacer(modifier = Modifier.height(48.dp))
-            
-            PrimaryButton(
-                text = "Share via WhatsApp",
-                onClick = {
-                    InvoiceShareHelper.shareFile(
-                        context = context,
-                        file = file,
-                        invoiceNumber = invoiceNumber,
-                        customerName = customerName,
-                        grandTotal = grandTotal,
-                        targetPackage = "com.whatsapp"
-                    )
-                },
-                enabled = fileExists,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SecondaryButton(
-                text = if (isDownloading) "Downloading…" else "Download PDF",
-                onClick = { startDownload() },
-                enabled = fileExists && !isDownloading,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextButton(
-                onClick = {
-                    InvoiceShareHelper.shareFile(
-                        context = context,
-                        file = file,
-                        invoiceNumber = invoiceNumber,
-                        customerName = customerName,
-                        grandTotal = grandTotal
-                    )
-                },
-                enabled = fileExists,
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(min = maxHeight)
+                    .padding(horizontal = Dimens.Xl, vertical = Dimens.Xxl),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Text("Share Options")
-            }
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Success",
+                    tint = MaterialTheme.ext.paid.text,
+                    modifier = Modifier.size(100.dp)
+                )
             
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             
-            TextButton(onClick = onNavigateHome) {
-                Text("Done")
+                Text(
+                    text = "Invoice Generated Successfully!",
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center
+                )
+
+                if (invoice != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "$invoiceNumber • $customerName • $grandTotal",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (loadFailed) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    ErrorState(message = "Could not load invoice details, but the PDF was saved.")
+                }
+
+                if (!fileExists) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    ErrorState(message = "PDF file not found. Regenerate it from invoice details.")
+                }
+            
+                Spacer(modifier = Modifier.height(48.dp))
+            
+                PrimaryButton(
+                    text = "Share via WhatsApp",
+                    onClick = {
+                        InvoiceShareHelper.shareFile(
+                            context = context,
+                            file = file,
+                            invoiceNumber = invoiceNumber,
+                            customerName = customerName,
+                            grandTotal = grandTotal,
+                            targetPackage = "com.whatsapp"
+                        )
+                    },
+                    enabled = fileExists,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SecondaryButton(
+                    text = if (isDownloading) "Downloading…" else "Download PDF",
+                    onClick = { startDownload() },
+                    enabled = fileExists && !isDownloading,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TextButton(
+                    onClick = {
+                        InvoiceShareHelper.shareFile(
+                            context = context,
+                            file = file,
+                            invoiceNumber = invoiceNumber,
+                            customerName = customerName,
+                            grandTotal = grandTotal
+                        )
+                    },
+                    enabled = fileExists,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Share Options")
+                }
+            
+                Spacer(modifier = Modifier.height(32.dp))
+            
+                TextButton(onClick = onNavigateHome) {
+                    Text("Done")
+                }
             }
         }
     }

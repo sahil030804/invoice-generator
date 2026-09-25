@@ -32,7 +32,8 @@ import com.kjbilling.app.ui.components.PaymentDialog
 import com.kjbilling.app.ui.components.PrimaryButton
 import com.kjbilling.app.ui.components.SecondaryButton
 import com.kjbilling.app.ui.components.TotalCard
-import com.kjbilling.app.ui.invoice.history.StatusChip
+import com.kjbilling.app.ui.components.AppCard
+import com.kjbilling.app.ui.components.InvoiceStatusBadge
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -165,7 +166,7 @@ fun InvoiceDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Customer Info
-                Card(modifier = Modifier.fillMaxWidth()) {
+                AppCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Customer", style = MaterialTheme.typography.labelMedium)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -183,7 +184,7 @@ fun InvoiceDetailScreen(
                 }
 
                 // Invoice meta
-                Card(modifier = Modifier.fillMaxWidth()) {
+                AppCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("Invoice ${invoice.invoiceNumber}", style = MaterialTheme.typography.titleSmall)
                         invoice.paymentMethod?.let {
@@ -196,26 +197,12 @@ fun InvoiceDetailScreen(
 
                 // Status Info
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    when {
-                        invoice.status == InvoiceStatus.CANCELLED -> {
-                            StatusChip(status = "CANCELLED", isSuccess = false, isError = true)
-                        }
-                        invoice.status == InvoiceStatus.DRAFT -> {
-                            StatusChip(status = "DRAFT", isSuccess = false, isError = false)
-                        }
-                        else -> {
-                            StatusChip(
-                                status = invoice.paymentStatus.name,
-                                isSuccess = invoice.paymentStatus == PaymentStatus.PAID,
-                                isError = invoice.paymentStatus == PaymentStatus.UNPAID
-                            )
-                        }
-                    }
+                    InvoiceStatusBadge(status = invoice.status, paymentStatus = invoice.paymentStatus)
                 }
 
                 // Items list
                 Text("Items", style = MaterialTheme.typography.titleMedium)
-                Card(modifier = Modifier.fillMaxWidth()) {
+                AppCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items.forEach { item ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -241,7 +228,7 @@ fun InvoiceDetailScreen(
                 )
 
                 if (!invoice.notes.isNullOrBlank()) {
-                    Card(modifier = Modifier.fillMaxWidth()) {
+                    AppCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text("Notes", style = MaterialTheme.typography.labelMedium)
                             Text(invoice.notes, style = MaterialTheme.typography.bodyMedium)

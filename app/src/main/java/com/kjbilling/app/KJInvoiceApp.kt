@@ -11,5 +11,6 @@ class KJInvoiceApp : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        container.themePreferences.syncOnStartup()
     }
 }

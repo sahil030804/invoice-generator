@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Theme.KJInvoice" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/splash_bg</item>
-        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/splash_bg</item>
-        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@drawable/app_logo</item>
+    <!-- Android 8–11: the window background doubles as the launch screen. -->
+    <style name="Theme.KJInvoice" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_legacy</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
     </style>
 </resources>

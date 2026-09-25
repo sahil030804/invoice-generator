@@ -46,7 +46,7 @@ class BackupManager(context: Context, private val logoStorage: LogoStorage) {
             val now = System.currentTimeMillis()
             val dir = File(appContext.cacheDir, BACKUP_DIR).apply { mkdirs() }
             val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date(now))
-            val target = File(dir, "KJ-Invoice-backup-$stamp.zip")
+            val target = File(dir, "Parchi-backup-$stamp.zip")
             val logo = logoStorage.logoFile()
 
             val manifest = BackupManifest(
@@ -142,7 +142,7 @@ class BackupManager(context: Context, private val logoStorage: LogoStorage) {
             }
         }
 
-        val text = manifestText ?: throw IOException("This is not a KJ Invoice backup")
+        val text = manifestText ?: throw IOException("This is not a Parchi backup")
         if (!File(into, ENTRY_DB).exists()) {
             throw IOException("Backup has no invoice data")
         }

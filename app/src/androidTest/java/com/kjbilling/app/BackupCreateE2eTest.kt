@@ -28,7 +28,7 @@ class BackupCreateE2eTest {
         val manager = BackupManager(app, LogoStorage(app))
         val zipFile = manager.createBackup().getOrThrow()
 
-        assertTrue(zipFile.name.startsWith("KJ-Invoice-backup-"))
+        assertTrue(zipFile.name.startsWith("Parchi-backup-"))
         ZipFile(zipFile).use { zip ->
             val names = zip.entries().toList().map { it.name }
             assertTrue(names.contains("manifest.properties"))

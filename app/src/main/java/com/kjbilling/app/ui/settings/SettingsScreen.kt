@@ -1,8 +1,11 @@
 package com.kjbilling.app.ui.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
@@ -11,10 +14,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kjbilling.app.KJInvoiceApp
 import com.kjbilling.app.domain.model.TaxType
+import com.kjbilling.app.domain.model.ThemeMode
 import com.kjbilling.app.ui.components.AppTextField
 import com.kjbilling.app.ui.components.LoadingState
 import android.content.Context
@@ -192,6 +197,11 @@ fun SettingsScreen(
                     HorizontalDivider()
                 }
 
+                // Appearance Section (kept below Invoice so existing rows don't move)
+                item {
+                    AppearanceSection(viewModel)
+                }
+
                 // Data & Backup Section
                 item {
                     BackupSection(viewModel)
@@ -214,9 +224,9 @@ fun SettingsScreen(
 fun SectionHeader(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 8.dp)
     )
 }
 
@@ -309,4 +319,44 @@ private fun restartApp(context: Context) {
     launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
     context.startActivity(launch)
     Process.killProcess(Process.myPid())
+}
+
+private val THEME_OPTIONS = listOf(
+    ThemeMode.SYSTEM to "System default",
+    ThemeMode.LIGHT to "Light",
+    ThemeMode.DARK to "Dark"
+)
+
+/** System / Light / Dark choice. Applied instantly and remembered across restarts. */
+@Composable
+private fun AppearanceSection(viewModel: SettingsViewModel) {
+    val selected by viewModel.themeMode.collectAsState()
+
+    SectionHeader("Appearance")
+    // Surface background so these rows match the ListItem rows of the other sections.
+    Column(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.surface)
+            .selectableGroup()
+    ) {
+        THEME_OPTIONS.forEach { (mode, label) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp)
+                    .selectable(
+                        selected = mode == selected,
+                        onClick = { viewModel.setThemeMode(mode) },
+                        role = Role.RadioButton
+                    )
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(selected = mode == selected, onClick = null)
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(label, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+    }
+    HorizontalDivider()
 }

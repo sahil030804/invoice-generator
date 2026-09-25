@@ -1,5 +1,9 @@
 package com.kjbilling.app.ui.product
 
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import com.kjbilling.app.ui.components.AppCard
+import com.kjbilling.app.ui.theme.Dimens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -67,8 +71,8 @@ fun ProductListScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(horizontal = Dimens.ScreenPadding, vertical = Dimens.Sm),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.ListGap)
                 ) {
                     items(products, key = { it.id }) { product ->
                         SwipeToDeleteProductCard(
@@ -120,19 +124,20 @@ fun SwipeToDeleteProductCard(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(vertical = 4.dp),
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.errorContainer),
                 contentAlignment = Alignment.CenterEnd
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(end = 16.dp)
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(end = Dimens.Xl)
                 )
             }
         },
         content = {
-            Card(
+            AppCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = onClick)
