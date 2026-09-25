@@ -3,6 +3,7 @@ package com.kjbilling.app.data.db.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.kjbilling.app.domain.model.BusinessSnapshot
 import com.kjbilling.app.domain.model.Invoice
 import com.kjbilling.app.domain.model.InvoiceStatus
 import com.kjbilling.app.domain.model.PaymentMethod
@@ -41,6 +42,13 @@ data class InvoiceEntity(
     val paymentMethod: PaymentMethod?,
     val amountPaid: BigDecimal,
     val notes: String?,
+    // Seller snapshot (null only for rows that predate migration 1→2 and had no profile).
+    val sellerName: String?,
+    val sellerAddress: String?,
+    val sellerPhone: String?,
+    val sellerEmail: String?,
+    val sellerGstin: String?,
+    val sellerOwner: String?,
     val createdAt: Long,
     val updatedAt: Long,
     val finalizedAt: Long?
@@ -67,6 +75,16 @@ data class InvoiceEntity(
             paymentMethod = paymentMethod,
             amountPaid = amountPaid,
             notes = notes,
+            seller = sellerName?.let {
+                BusinessSnapshot(
+                    name = it,
+                    address = sellerAddress.orEmpty(),
+                    phone = sellerPhone.orEmpty(),
+                    email = sellerEmail,
+                    gstin = sellerGstin,
+                    ownerName = sellerOwner
+                )
+            },
             createdAt = createdAt,
             updatedAt = updatedAt,
             finalizedAt = finalizedAt
@@ -95,6 +113,12 @@ data class InvoiceEntity(
                 paymentMethod = domain.paymentMethod,
                 amountPaid = domain.amountPaid,
                 notes = domain.notes,
+                sellerName = domain.seller?.name,
+                sellerAddress = domain.seller?.address,
+                sellerPhone = domain.seller?.phone,
+                sellerEmail = domain.seller?.email,
+                sellerGstin = domain.seller?.gstin,
+                sellerOwner = domain.seller?.ownerName,
                 createdAt = domain.createdAt,
                 updatedAt = domain.updatedAt,
                 finalizedAt = domain.finalizedAt

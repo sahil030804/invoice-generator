@@ -3,6 +3,7 @@ package com.kjbilling.app.domain.calculator
 import com.kjbilling.app.domain.model.TaxBreakdown
 import com.kjbilling.app.domain.model.TaxType
 import java.math.BigDecimal
+import com.kjbilling.app.domain.validator.StateResolver
 import java.math.RoundingMode
 
 data class InvoiceItemCalculation(
@@ -203,11 +204,21 @@ class InvoiceCalculator {
         )
     }
 
-    fun determineTaxType(businessState: String?, customerState: String?): TaxType {
-        if (businessState.isNullOrBlank() || customerState.isNullOrBlank()) {
+    /**
+     * CGST+SGST when supplier and buyer are in the same state, otherwise IGST.
+     * The buyer's GSTIN state code (when valid) wins over the typed state, since the GSTIN is
+     * what the tax authority sees. With no state information at all we assume same-state.
+     */
+    fun determineTaxType(
+        businessState: String?,
+        customerState: String?,
+        customerGstin: String? = null
+    ): TaxType {
+        val buyerState = StateResolver.fromGstin(customerGstin) ?: customerState
+        if (businessState.isNullOrBlank() || buyerState.isNullOrBlank()) {
             return TaxType.CGST_SGST
         }
-        return if (businessState.equals(customerState, ignoreCase = true)) {
+        return if (StateResolver.isSameState(businessState, buyerState)) {
             TaxType.CGST_SGST
         } else {
             TaxType.IGST

@@ -12,6 +12,7 @@ import com.kjbilling.app.di.AppContainer
 import com.kjbilling.app.domain.calculator.InvoiceCalculator
 import com.kjbilling.app.domain.calculator.InvoiceTotals
 import com.kjbilling.app.domain.model.*
+import com.kjbilling.app.domain.validator.InvoiceValidator
 import com.kjbilling.app.pdf.InvoicePdfGenerator
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -173,7 +174,7 @@ class InvoiceCreateViewModel(
         val bProfile = businessProfile.value
         val bState = bProfile?.state
         val cState = customer?.state
-        _taxType.value = invoiceCalculator.determineTaxType(bState, cState)
+        _taxType.value = invoiceCalculator.determineTaxType(bState, cState, customer?.gstin)
     }
 
     fun addItem() {
@@ -309,10 +310,11 @@ class InvoiceCreateViewModel(
                 qty == null || qty <= BigDecimal.ZERO ||
                     price == null || price <= BigDecimal.ZERO ||
                     disc == null || disc < BigDecimal.ZERO || (uiItem.discountType == DiscountType.PERCENT && disc > BigDecimal("100")) ||
-                    gst < BigDecimal.ZERO
+                    gst < BigDecimal.ZERO ||
+                    !InvoiceValidator.isWithinLimits(qty, price, gst)
             }
             if (invalidItem != null) {
-                _error.value = "Check qty (>0), price (>0), discount (0-100% or ≥0 amount), GST (≥0) for all items"
+                _error.value = "Check qty (>0), price (>0), discount (0-100% or ≥0 amount), GST (0-40%) for all items, and keep values realistic"
                 return@launch
             }
 
@@ -408,6 +410,7 @@ class InvoiceCreateViewModel(
                         paymentStatus = newPaymentStatus,
                         amountPaid = newPaid,
                         notes = _notes.value.takeIf { it.isNotBlank() },
+                        seller = existing.seller ?: BusinessSnapshot.from(bProfile),
                         updatedAt = System.currentTimeMillis()
                     )
 
@@ -421,8 +424,6 @@ class InvoiceCreateViewModel(
                     }
                     _updateSuccess.value = true
                 } else {
-                    val invoiceNumber = invoiceRepository.generateNextInvoiceNumber()
-
                     val domainItems = _items.value.mapIndexed { index, uiItem ->
                         val qty = uiItem.quantity.toBigDecimalOrNull() ?: BigDecimal.ZERO
                         val price = uiItem.unitPrice.toBigDecimalOrNull() ?: BigDecimal.ZERO
@@ -468,7 +469,7 @@ class InvoiceCreateViewModel(
 
                     val invoice = Invoice(
                         id = 0L,
-                        invoiceNumber = invoiceNumber,
+                        invoiceNumber = "", // assigned atomically by saveNew
                         invoiceDate = System.currentTimeMillis(),
                         dueDate = System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L, // 7 days
                         customerId = _selectedCustomer.value?.id,
@@ -484,10 +485,11 @@ class InvoiceCreateViewModel(
                         taxType = _taxType.value,
                         status = InvoiceStatus.DRAFT,
                         paymentStatus = PaymentStatus.UNPAID,
-                        notes = _notes.value.takeIf { it.isNotBlank() }
+                        notes = _notes.value.takeIf { it.isNotBlank() },
+                        seller = BusinessSnapshot.from(bProfile)
                     )
 
-                    val savedInvoiceId = invoiceRepository.save(invoice)
+                    val savedInvoiceId = invoiceRepository.saveNew(invoice)
                     val savedInvoice = invoiceRepository.getById(savedInvoiceId) ?: throw IllegalStateException("Failed to load saved invoice")
                     _generatedInvoiceId.value = savedInvoice.id
 

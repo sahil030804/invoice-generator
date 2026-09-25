@@ -11,6 +11,7 @@ import com.kjbilling.app.data.repository.ProductRepository
 import com.kjbilling.app.di.AppContainer
 import com.kjbilling.app.domain.calculator.InvoiceCalculator
 import com.kjbilling.app.domain.calculator.InvoiceTotals
+import com.kjbilling.app.domain.model.BusinessSnapshot
 import com.kjbilling.app.domain.model.Customer
 import com.kjbilling.app.domain.model.Invoice
 import com.kjbilling.app.domain.model.InvoiceItem
@@ -97,7 +98,7 @@ class QuickBillViewModel(
         val taxType = if (!gstEnabled.value) {
             TaxType.NO_GST
         } else {
-            invoiceCalculator.determineTaxType(businessProfile.value?.state, customer?.state)
+            invoiceCalculator.determineTaxType(businessProfile.value?.state, customer?.state, customer?.gstin)
         }
 
         val calculatedItems = quantities.mapNotNull { (productId, qty) ->
@@ -200,7 +201,7 @@ class QuickBillViewModel(
                 val taxType = if (!gstEnabled.value) {
                     TaxType.NO_GST
                 } else {
-                    invoiceCalculator.determineTaxType(bProfile.state, customer?.state)
+                    invoiceCalculator.determineTaxType(bProfile.state, customer?.state, customer?.gstin)
                 }
 
                 val domainItems = mutableListOf<InvoiceItem>()
@@ -243,11 +244,9 @@ class QuickBillViewModel(
                 }
 
                 val totals = invoiceCalculator.calculateInvoice(calculations)
-                val invoiceNumber = invoiceRepository.generateNextInvoiceNumber()
-
                 val invoice = Invoice(
                     id = 0L,
-                    invoiceNumber = invoiceNumber,
+                    invoiceNumber = "", // assigned atomically by saveNew
                     customerId = customer?.id,
                     customerName = customer?.name ?: "Walk-in Customer",
                     customerAddress = customer?.billingAddress,
@@ -266,11 +265,12 @@ class QuickBillViewModel(
                     paymentMethod = paymentMethod,
                     amountPaid = totals.grandTotal,
                     notes = "Counter Sale (Quick Bill)",
+                    seller = BusinessSnapshot.from(bProfile),
                     createdAt = System.currentTimeMillis(),
                     updatedAt = System.currentTimeMillis()
                 )
 
-                val invoiceId = invoiceRepository.save(invoice)
+                val invoiceId = invoiceRepository.saveNew(invoice)
                 val savedInvoice = invoiceRepository.getById(invoiceId)
                     ?: throw IllegalStateException("Failed to load saved invoice")
 

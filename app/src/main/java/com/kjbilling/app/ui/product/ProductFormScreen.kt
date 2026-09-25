@@ -1,5 +1,6 @@
 package com.kjbilling.app.ui.product
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -45,12 +46,33 @@ fun ProductFormScreen(
     val sellingPrice = sellingPriceStr.toBigDecimalOrNull()
     val isFormValid = name.isNotBlank() && sellingPrice != null && sellingPrice > BigDecimal.ZERO
 
+    val isDirty = name != (existingProduct?.name ?: "") ||
+        sellingPriceStr != (existingProduct?.sellingPrice?.toPlainString() ?: "") ||
+        hsnCode != (existingProduct?.hsnCode ?: "") ||
+        unit != (existingProduct?.unit ?: "PCS") ||
+        gstRateStr != (existingProduct?.gstRate?.toPlainString() ?: "") ||
+        description != (existingProduct?.description ?: "") ||
+        sku != (existingProduct?.sku ?: "")
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val handleBack = { if (isDirty) showDiscardDialog = true else onNavigateBack() }
+    BackHandler(onBack = handleBack)
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("Discard changes?") },
+            text = { Text("Your unsaved changes will be lost.") },
+            confirmButton = { TextButton(onClick = onNavigateBack) { Text("Discard") } },
+            dismissButton = { TextButton(onClick = { showDiscardDialog = false }) { Text("Keep editing") } }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(if (productId != null) "Edit Product" else "New Product") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -171,15 +193,16 @@ fun ProductFormScreen(
                     if (isFormValid) {
                         val finalGst = gstRateStr.toBigDecimalOrNull()
                         viewModel.saveProduct(
-                            Product(
-                                id = existingProduct?.id ?: 0L,
+                            // copy() keeps useCount, lastUsedAt and createdAt of an existing product.
+                            (existingProduct ?: Product(name = name, sellingPrice = sellingPrice!!)).copy(
                                 name = name,
                                 sellingPrice = sellingPrice!!,
                                 hsnCode = hsnCode.takeIf { it.isNotBlank() },
                                 unit = unit,
                                 gstRate = finalGst,
                                 description = description.takeIf { it.isNotBlank() },
-                                sku = sku.takeIf { it.isNotBlank() }
+                                sku = sku.takeIf { it.isNotBlank() },
+                                updatedAt = System.currentTimeMillis()
                             )
                         )
                         onNavigateBack()

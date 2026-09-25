@@ -1,5 +1,6 @@
 package com.kjbilling.app.ui.customer
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -14,8 +15,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kjbilling.app.KJInvoiceApp
 import com.kjbilling.app.domain.model.Customer
 import com.kjbilling.app.domain.validator.GstinValidator
+import com.kjbilling.app.domain.validator.StateResolver
 import com.kjbilling.app.ui.components.AppTextField
 import com.kjbilling.app.ui.components.PrimaryButton
+import com.kjbilling.app.ui.settings.INDIAN_STATES
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,12 +46,35 @@ fun CustomerFormScreen(
     val isGstinValid = remember(gstin) { gstin.isBlank() || GstinValidator.validate(gstin).isValid }
     val isFormValid = name.isNotBlank() && isGstinValid
 
+    val isDirty = name != (existingCustomer?.name ?: "") ||
+        mobile != (existingCustomer?.mobile ?: "") ||
+        email != (existingCustomer?.email ?: "") ||
+        address != (existingCustomer?.billingAddress ?: "") ||
+        state != (existingCustomer?.state ?: "") ||
+        pincode != (existingCustomer?.pincode ?: "") ||
+        gstin != (existingCustomer?.gstin ?: "") ||
+        businessName != (existingCustomer?.businessName ?: "") ||
+        notes != (existingCustomer?.notes ?: "")
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val handleBack = { if (isDirty) showDiscardDialog = true else onNavigateBack() }
+    BackHandler(onBack = handleBack)
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("Discard changes?") },
+            text = { Text("Your unsaved changes will be lost.") },
+            confirmButton = { TextButton(onClick = onNavigateBack) { Text("Discard") } },
+            dismissButton = { TextButton(onClick = { showDiscardDialog = false }) { Text("Keep editing") } }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(if (customerId != null) "Edit Customer" else "New Customer") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -98,14 +124,34 @@ fun CustomerFormScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Simplification: using a text field for state dropdown since no standard Dropdown exists in components map, 
-            // but normally we'd build an ExposedDropdownMenuBox. Let's build a basic one if needed, or stick to TextField
-            AppTextField(
-                value = state,
-                onValueChange = { state = it },
-                label = "State",
-                modifier = Modifier.fillMaxWidth()
-            )
+            var stateMenuOpen by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = stateMenuOpen,
+                onExpandedChange = { stateMenuOpen = !stateMenuOpen }
+            ) {
+                AppTextField(
+                    value = state,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = "State",
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = stateMenuOpen) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = stateMenuOpen,
+                    onDismissRequest = { stateMenuOpen = false }
+                ) {
+                    INDIAN_STATES.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option) },
+                            onClick = {
+                                state = option
+                                stateMenuOpen = false
+                            }
+                        )
+                    }
+                }
+            }
 
             AppTextField(
                 value = pincode,
@@ -116,7 +162,11 @@ fun CustomerFormScreen(
 
             AppTextField(
                 value = gstin,
-                onValueChange = { gstin = it },
+                onValueChange = { input ->
+                    gstin = input.uppercase()
+                    // The GSTIN's first two digits fix the state, so keep the state field in sync.
+                    StateResolver.fromGstin(gstin)?.let { state = it }
+                },
                 label = "GSTIN",
                 modifier = Modifier.fillMaxWidth(),
                 isError = !isGstinValid
@@ -144,8 +194,8 @@ fun CustomerFormScreen(
                 onClick = {
                     if (isFormValid) {
                         viewModel.saveCustomer(
-                            Customer(
-                                id = existingCustomer?.id ?: 0L,
+                            // copy() keeps isWalkIn, lastUsedAt and createdAt of an existing customer.
+                            (existingCustomer ?: Customer(name = name)).copy(
                                 name = name,
                                 mobile = mobile.takeIf { it.isNotBlank() },
                                 email = email.takeIf { it.isNotBlank() },
@@ -154,7 +204,8 @@ fun CustomerFormScreen(
                                 pincode = pincode.takeIf { it.isNotBlank() },
                                 gstin = gstin.takeIf { it.isNotBlank() },
                                 businessName = businessName.takeIf { it.isNotBlank() },
-                                notes = notes.takeIf { it.isNotBlank() }
+                                notes = notes.takeIf { it.isNotBlank() },
+                                updatedAt = System.currentTimeMillis()
                             )
                         )
                         onNavigateBack()

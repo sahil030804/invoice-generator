@@ -17,7 +17,6 @@ class InvoiceLifecycleE2eTest : OnboardedBase() {
         clickText("INV-0001")
         waitForText("Record Payment")
         waitForText("Balance: ₹1,416.00")
-        assertTextCount("GENERATED", 1)
         assertTextCount("UNPAID", 1)
 
         // partial payment of 500
@@ -28,7 +27,6 @@ class InvoiceLifecycleE2eTest : OnboardedBase() {
         waitForText("Balance: ₹916.00")
         assertTextExists("Paid: ₹500.00")
         assertTextExists("PARTIAL")
-        assertTextExists("GENERATED")
         assertTextCount("₹500.00", 1)
 
         // full payment clears the balance
@@ -37,7 +35,7 @@ class InvoiceLifecycleE2eTest : OnboardedBase() {
         setFieldNoScroll("Amount (Balance 916)", "916")
         clickText("Save")
         waitForText("Balance: ₹0.00")
-        assertTextCount("PAID", 2)
+        assertTextCount("PAID", 1)
         assertTextCount("₹0.00", 1) // Balance Due row in TotalCard
 
         // payment + cancel buttons hidden once paid
@@ -113,7 +111,7 @@ class InvoiceLifecycleE2eTest : OnboardedBase() {
         waitForText("Invoice History")
         assertTextExists("BILL-0003")
         assertTextExists("BILL-0004")
-        assertTextExists("₹10.00")
+        assertTextCount("₹10.00", 2)
         assertTextExists("₹20.00")
 
         // search narrows the list

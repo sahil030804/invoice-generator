@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.kjbilling.app.data.db.converter.Converters
 import com.kjbilling.app.data.db.dao.AppSettingsDao
@@ -18,6 +19,8 @@ import com.kjbilling.app.data.db.entity.CustomerEntity
 import com.kjbilling.app.data.db.entity.InvoiceEntity
 import com.kjbilling.app.data.db.entity.InvoiceItemEntity
 import com.kjbilling.app.data.db.entity.ProductEntity
+import com.kjbilling.app.domain.model.BusinessProfile
+import com.kjbilling.app.domain.model.BusinessSnapshot
 import com.kjbilling.app.domain.model.PaymentStatus
 import com.kjbilling.app.domain.model.TaxType
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +37,7 @@ import java.math.BigDecimal
         InvoiceItemEntity::class,
         AppSettingsEntity::class
     ],
-    version = 1,
+    version = AppDatabase.DB_VERSION,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -50,13 +53,66 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        /**
+         * Adds the seller snapshot columns to invoices and backfills every existing invoice
+         * from the current business profile (best available data for pre-snapshot invoices).
+         */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                SELLER_COLUMNS.forEach { db.execSQL("ALTER TABLE invoices ADD COLUMN $it TEXT") }
+
+                val profile = db.query(
+                    "SELECT businessName, ownerName, mobile, address, state, gstin, email, city, pincode " +
+                        "FROM business_profiles WHERE id = 1"
+                ).use { c ->
+                    if (!c.moveToFirst()) {
+                        return
+                    }
+                    BusinessProfile(
+                        businessName = c.getString(0),
+                        ownerName = c.getString(1),
+                        mobile = c.getString(2),
+                        address = c.getString(3),
+                        state = c.getString(4),
+                        gstin = c.getString(5),
+                        email = c.getString(6),
+                        city = c.getString(7),
+                        pincode = c.getString(8)
+                    )
+                }
+
+                val seller = BusinessSnapshot.from(profile)
+                db.execSQL(
+                    "UPDATE invoices SET sellerName = ?, sellerAddress = ?, sellerPhone = ?, " +
+                        "sellerEmail = ?, sellerGstin = ?, sellerOwner = ?",
+                    arrayOf<Any?>(seller.name, seller.address, seller.phone, seller.email, seller.gstin, seller.ownerName)
+                )
+            }
+        }
+
+        private val SELLER_COLUMNS = listOf(
+            "sellerName", "sellerAddress", "sellerPhone", "sellerEmail", "sellerGstin", "sellerOwner"
+        )
+
+        const val DB_NAME = "kj_invoice_database"
+        const val DB_VERSION = 2
+
+        /** Closes and forgets the singleton (used by restore, right before the app restarts). */
+        fun closeInstance() {
+            synchronized(this) {
+                INSTANCE?.close()
+                INSTANCE = null
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "kj_invoice_database"
+                    DB_NAME
                 )
+                    .addMigrations(MIGRATION_1_2)
                     .addCallback(DatabaseCallback())
                     .build()
                 INSTANCE = instance

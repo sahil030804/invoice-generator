@@ -123,7 +123,7 @@ class OnboardingViewModel(
             businessProfileRepository.saveProfile(profile)
 
             val settings = AppSettings(
-                invoicePrefix = "INV",
+                invoicePrefix = "INV-",
                 nextInvoiceNumber = 1,
                 gstEnabled = currentState.isGstRegistered,
                 defaultGstRate = currentState.defaultGstRate,

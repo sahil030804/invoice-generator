@@ -23,6 +23,7 @@ data class Invoice(
     val paymentMethod: PaymentMethod? = null,
     val amountPaid: BigDecimal = BigDecimal.ZERO,
     val notes: String? = null,
+    val seller: BusinessSnapshot? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val finalizedAt: Long? = null

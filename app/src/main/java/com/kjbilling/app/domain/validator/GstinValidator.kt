@@ -15,7 +15,7 @@ object GstinValidator {
         }
 
         val stateCode = gstin.take(2).toIntOrNull()
-        if (stateCode == null || stateCode !in 1..37) {
+        if (stateCode == null || stateCode !in 1..38) {
             return GstinValidationResult(false, "Invalid state code")
         }
 

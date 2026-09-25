@@ -271,6 +271,31 @@ fun QuickBillScreen(
         }
     }
 
+    // Bill is already saved but the PDF failed: say so, never leave the cashier guessing (a second
+    // tap would create a duplicate invoice). PDF can be regenerated from the invoice detail screen.
+    if (generatedInvoice != null && generatedFile == null) {
+        val savedInvoice = generatedInvoice!!
+        AlertDialog(
+            onDismissRequest = { /* Force explicit user action */ },
+            title = { Text("Bill saved: ${savedInvoice.invoiceNumber}") },
+            text = { Text("The bill was saved, but the PDF could not be created. Open the invoice to download or share it.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val invoiceId = savedInvoice.id
+                    viewModel.resetForNextBill()
+                    onNavigateToDetail(invoiceId)
+                }) {
+                    Text("View invoice")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.resetForNextBill() }) {
+                    Text("Start next bill")
+                }
+            }
+        )
+    }
+
     // Success Screen Overlay Dialog
     if (generatedInvoice != null && generatedFile != null) {
         val invoice = generatedInvoice!!

@@ -1,5 +1,7 @@
 package com.kjbilling.app.data.repository
 
+import androidx.room.RoomDatabase
+import androidx.room.withTransaction
 import com.kjbilling.app.data.db.dao.AppSettingsDao
 import com.kjbilling.app.data.db.dao.InvoiceDao
 import com.kjbilling.app.data.db.entity.InvoiceEntity
@@ -8,13 +10,15 @@ import com.kjbilling.app.domain.model.Invoice
 import com.kjbilling.app.domain.model.InvoiceStatus
 import com.kjbilling.app.domain.model.PaymentMethod
 import com.kjbilling.app.domain.model.PaymentStatus
+import com.kjbilling.app.domain.numbering.InvoiceNumbering
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.math.BigDecimal
 
 class InvoiceRepository(
     private val invoiceDao: InvoiceDao,
-    private val appSettingsDao: AppSettingsDao
+    private val appSettingsDao: AppSettingsDao,
+    private val database: RoomDatabase
 ) {
 
     fun getAll(): Flow<List<Invoice>> {
@@ -61,9 +65,28 @@ class InvoiceRepository(
         invoiceDao.deleteDraft(id)
     }
 
-    suspend fun generateNextInvoiceNumber(): String {
-        val settings = appSettingsDao.getSettingsOnce()
-        val prefix = settings?.invoicePrefix ?: "INV-"
-        return appSettingsDao.generateNextInvoiceNumber(prefix)
+    /**
+     * Saves a NEW invoice and assigns its number in one transaction: if the insert fails,
+     * the counter rolls back too, so no invoice number is ever burned. Numbers already in use
+     * are skipped, so a lowered counter can never produce a duplicate.
+     * [invoice].invoiceNumber is ignored and replaced.
+     */
+    suspend fun saveNew(invoice: Invoice): Long {
+        return database.withTransaction {
+            val settings = appSettingsDao.getSettingsOnce()
+            val prefix = settings?.invoicePrefix ?: DEFAULT_PREFIX
+            val start = settings?.nextInvoiceNumber ?: 1L
+
+            val next = InvoiceNumbering.nextFree(prefix, start) { number ->
+                invoiceDao.countByNumber(number) > 0
+            }
+            appSettingsDao.updateInvoicePrefixAndNumber(prefix, next.nextCounter)
+
+            save(invoice.copy(invoiceNumber = next.number))
+        }
+    }
+
+    private companion object {
+        const val DEFAULT_PREFIX = "INV-"
     }
 }

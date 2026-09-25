@@ -15,10 +15,12 @@ class AppContainer(context: Context) {
     val businessProfileRepository by lazy { BusinessProfileRepository(database.businessProfileDao()) }
     val customerRepository by lazy { CustomerRepository(database.customerDao()) }
     val productRepository by lazy { ProductRepository(database.productDao()) }
-    val invoiceRepository by lazy { InvoiceRepository(database.invoiceDao(), database.appSettingsDao()) }
+    val invoiceRepository by lazy { InvoiceRepository(database.invoiceDao(), database.appSettingsDao(), database) }
     val appSettingsRepository by lazy { AppSettingsRepository(database.appSettingsDao()) }
     
     val invoiceCalculator by lazy { InvoiceCalculator() }
-    val invoicePdfGenerator by lazy { com.kjbilling.app.pdf.InvoicePdfGenerator(context) }
+    val logoStorage by lazy { com.kjbilling.app.data.storage.LogoStorage(context) }
+    val backupManager by lazy { com.kjbilling.app.data.backup.BackupManager(context, logoStorage) }
+    val invoicePdfGenerator by lazy { com.kjbilling.app.pdf.InvoicePdfGenerator(context, logoStorage) }
     val invoiceShareHelper = com.kjbilling.app.pdf.InvoiceShareHelper
 }

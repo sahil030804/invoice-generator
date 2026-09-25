@@ -32,6 +32,9 @@ interface InvoiceDao {
     @Query("SELECT * FROM invoices ORDER BY createdAt DESC")
     fun getAll(): Flow<List<InvoiceEntity>>
 
+    @Query("SELECT COUNT(*) FROM invoices WHERE invoiceNumber = :number")
+    suspend fun countByNumber(number: String): Int
+
     @Query("SELECT * FROM invoices WHERE id = :id")
     suspend fun getById(id: Long): InvoiceEntity?
 

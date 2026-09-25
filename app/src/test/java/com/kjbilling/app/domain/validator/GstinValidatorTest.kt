@@ -39,4 +39,10 @@ class GstinValidatorTest {
         val result = GstinValidator.validate("27AAPFU0939F1Z@")
         assertFalse(result.isValid)
     }
+
+    @Test
+    fun testLadakhStateCodeIsAccepted() {
+        val result = GstinValidator.validate("38AABCS1429B1ZX")
+        assertTrue(result.isValid)
+    }
 }

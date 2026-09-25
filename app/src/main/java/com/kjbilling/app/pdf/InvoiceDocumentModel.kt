@@ -3,6 +3,7 @@ package com.kjbilling.app.pdf
 import com.kjbilling.app.domain.formatter.AmountInWords
 import com.kjbilling.app.domain.formatter.CurrencyFormatter
 import com.kjbilling.app.domain.model.BusinessProfile
+import com.kjbilling.app.domain.model.BusinessSnapshot
 import com.kjbilling.app.domain.model.Invoice
 import com.kjbilling.app.domain.model.TaxBreakdown
 import com.kjbilling.app.domain.model.TaxType
@@ -117,18 +118,16 @@ data class InvoiceDocumentModel(
             val hasTax = taxBreakdown.any { it.totalTax > BigDecimal.ZERO }
             val showPayment = invoice.amountPaid > BigDecimal.ZERO || invoice.paymentStatus != com.kjbilling.app.domain.model.PaymentStatus.UNPAID
 
+            // Frozen at issue time; the live profile is only a fallback for invoices without a snapshot.
+            val seller = invoice.seller ?: BusinessSnapshot.from(business)
+
             return InvoiceDocumentModel(
-                businessName = business.businessName,
-                businessAddress = listOfNotNull(
-                    business.address.takeIf { it.isNotBlank() },
-                    business.city?.takeIf { it.isNotBlank() },
-                    business.state.takeIf { it.isNotBlank() },
-                    business.pincode?.takeIf { it.isNotBlank() }
-                ).joinToString(", "),
-                businessPhone = business.mobile,
-                businessEmail = business.email?.takeIf { it.isNotBlank() },
-                businessGstin = business.gstin?.takeIf { it.isNotBlank() },
-                businessOwner = business.ownerName.takeIf { it.isNotBlank() },
+                businessName = seller.name,
+                businessAddress = seller.address,
+                businessPhone = seller.phone,
+                businessEmail = seller.email,
+                businessGstin = seller.gstin,
+                businessOwner = seller.ownerName,
                 invoiceTitle = title,
                 invoiceNumber = invoice.invoiceNumber,
                 invoiceDate = formatDate(invoice.invoiceDate),
@@ -152,7 +151,7 @@ data class InvoiceDocumentModel(
                 paymentMethod = invoice.paymentMethod?.name,
                 notes = invoice.notes?.takeIf { it.isNotBlank() },
                 terms = DECLARATION,
-                signatureName = business.ownerName.takeIf { it.isNotBlank() },
+                signatureName = seller.ownerName,
                 showTaxSummary = hasTax
             )
         }

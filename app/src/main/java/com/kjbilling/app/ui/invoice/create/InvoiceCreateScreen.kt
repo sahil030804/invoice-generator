@@ -2,6 +2,7 @@ package com.kjbilling.app.ui.invoice.create
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -89,6 +90,9 @@ fun InvoiceCreateScreen(
             onNavigateBack()
         }
     }
+
+    // Hardware/gesture back must ask too, not just the toolbar arrow.
+    BackHandler(onBack = ::handleBack)
 
     Scaffold(
         topBar = {

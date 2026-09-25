@@ -1,5 +1,6 @@
 package com.kjbilling.app.pdf.template
 
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -7,10 +8,11 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import com.kjbilling.app.pdf.InvoiceDocumentModel
+import com.kjbilling.app.util.ImageSizing
 
 /**
  * Classic Corporate invoice layout matching mock-templates/01-classic-corporate.html:
- * Letterhead with initials logo badge, 3.5pt solid Navy divider, 2-column meta grid,
+ * Letterhead with business logo (or initials badge when none), 3.5pt solid Navy divider, 2-column meta grid,
  * solid Navy items table header with white typography, alternating zebra rows (#F5F8FC),
  * boxed totals with solid Navy Grand Total row, amount in words with teal accent bar,
  * payment details card, notes & terms, and aligned signature block.
@@ -170,6 +172,11 @@ class ClassicTemplateRenderer {
         style = Paint.Style.FILL
     }
 
+    private val logoPaint = Paint().apply {
+        isAntiAlias = true
+        isFilterBitmap = true
+    }
+
     private val cardBorderPaint = Paint().apply {
         color = hairline
         style = Paint.Style.STROKE
@@ -204,7 +211,10 @@ class ClassicTemplateRenderer {
         }
     }
 
-    fun render(model: InvoiceDocumentModel): PdfDocument {
+    /**
+     * @param logo Optional business logo; drawn aspect-fit in the letterhead in place of the initials badge.
+     */
+    fun render(model: InvoiceDocumentModel, logo: Bitmap? = null): PdfDocument {
         val document = PdfDocument()
         var pageNumber = 1
         var pageInfo = PdfDocument.PageInfo.Builder(pageWidth.toInt(), pageHeight.toInt(), pageNumber).create()
@@ -239,14 +249,26 @@ class ClassicTemplateRenderer {
         // 1. Letterhead matching 01-classic-corporate.html
         val headerStartY = currentY
         val logoSize = 36f
-        val logoRect = RectF(margin, headerStartY, margin + logoSize, headerStartY + logoSize)
-        canvas.drawRoundRect(logoRect, 8f, 8f, navyFillPaint)
-        val initials = getInitials(model.businessName)
-        val initWidth = whiteLogoPaint.measureText(initials)
-        canvas.drawText(initials, margin + (logoSize - initWidth) / 2f, headerStartY + 23.5f, whiteLogoPaint)
+        val (logoW, logoH) = if (logo != null) {
+            ImageSizing.fitInside(logo.width, logo.height, LOGO_MAX_WIDTH, LOGO_MAX_HEIGHT)
+        } else {
+            0f to 0f
+        }
+        val logoSlotW = if (logo != null && logoW > 0f) {
+            val logoTop = headerStartY + (LOGO_MAX_HEIGHT - logoH) / 2f
+            canvas.drawBitmap(logo, null, RectF(margin, logoTop, margin + logoW, logoTop + logoH), logoPaint)
+            logoW
+        } else {
+            val logoRect = RectF(margin, headerStartY, margin + logoSize, headerStartY + logoSize)
+            canvas.drawRoundRect(logoRect, 8f, 8f, navyFillPaint)
+            val initials = getInitials(model.businessName)
+            val initWidth = whiteLogoPaint.measureText(initials)
+            canvas.drawText(initials, margin + (logoSize - initWidth) / 2f, headerStartY + 23.5f, whiteLogoPaint)
+            logoSize
+        }
 
-        val busLeft = margin + logoSize + 10f
-        val headerLeftW = contentWidth - 210f - (logoSize + 10f)
+        val busLeft = margin + logoSlotW + 10f
+        val headerLeftW = contentWidth - 210f - (logoSlotW + 10f)
         canvas.drawText(truncate(model.businessName, bigNamePaint, headerLeftW), busLeft, headerStartY + 16f, bigNamePaint)
 
         val contactLines = listOfNotNull(
@@ -273,7 +295,7 @@ class ClassicTemplateRenderer {
         canvas.drawRoundRect(tagRect, 7.5f, 7.5f, navyFillPaint)
         canvas.drawText(tagText, tagLeft + 7f, tagTop + 10.5f, tagTextPaint)
 
-        currentY = maxOf(busY + 12f, tagTop + tagH + 10f)
+        currentY = maxOf(busY + 12f, tagTop + tagH + 10f, headerStartY + logoH + 10f)
 
         // 3.5pt solid Navy rule under letterhead
         canvas.drawLine(margin, currentY, rightEdge, currentY, navyBarPaint)
@@ -551,5 +573,10 @@ class ClassicTemplateRenderer {
             lines.add(current.toString())
         }
         return lines
+    }
+
+    companion object {
+        private const val LOGO_MAX_WIDTH = 90f
+        private const val LOGO_MAX_HEIGHT = 44f
     }
 }

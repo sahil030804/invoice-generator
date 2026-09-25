@@ -17,7 +17,18 @@ import com.kjbilling.app.KJInvoiceApp
 import com.kjbilling.app.domain.model.TaxType
 import com.kjbilling.app.ui.components.AppTextField
 import com.kjbilling.app.ui.components.LoadingState
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Process
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
+import java.io.File
 import java.math.BigDecimal
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 val GST_RATES = listOf(BigDecimal.ZERO, BigDecimal("5.00"), BigDecimal("12.00"), BigDecimal("18.00"), BigDecimal("28.00"))
 
@@ -181,6 +192,11 @@ fun SettingsScreen(
                     HorizontalDivider()
                 }
 
+                // Data & Backup Section
+                item {
+                    BackupSection(viewModel)
+                }
+
                 // About Section
                 item {
                     SectionHeader("About")
@@ -202,4 +218,95 @@ fun SectionHeader(title: String) {
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     )
+}
+
+private val BACKUP_DATE_FORMAT = SimpleDateFormat("dd MMM yyyy, h:mm a", Locale.getDefault())
+
+/**
+ * Local backup/restore. The backup is one .zip the user keeps anywhere (Files, Drive, WhatsApp, USB).
+ */
+@Composable
+private fun BackupSection(viewModel: SettingsViewModel) {
+    val context = LocalContext.current
+    val lastBackupAt by viewModel.lastBackupAt.collectAsState()
+    val isBusy by viewModel.isBackupBusy.collectAsState()
+    val message by viewModel.backupMessage.collectAsState()
+    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
+
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            pendingRestoreUri = uri
+        }
+    }
+
+    SectionHeader("Data & Backup")
+    ListItem(
+        headlineContent = { Text("Back up now") },
+        supportingContent = {
+            Text(
+                lastBackupAt?.let { "Last backup: ${BACKUP_DATE_FORMAT.format(Date(it))}" }
+                    ?: "Never backed up. Back up so a lost phone doesn't lose your invoices."
+            )
+        },
+        trailingContent = if (isBusy) {
+            { CircularProgressIndicator(modifier = Modifier.size(24.dp)) }
+        } else {
+            null
+        },
+        modifier = Modifier.clickable(enabled = !isBusy) {
+            viewModel.backupNow { file -> shareBackup(context, file) }
+        }
+    )
+    ListItem(
+        headlineContent = { Text("Restore from backup") },
+        supportingContent = { Text("Replace all data with a backup file") },
+        modifier = Modifier.clickable(enabled = !isBusy) {
+            picker.launch(arrayOf("application/zip", "application/octet-stream"))
+        }
+    )
+    HorizontalDivider()
+
+    pendingRestoreUri?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { pendingRestoreUri = null },
+            title = { Text("Restore this backup?") },
+            text = {
+                Text("All current invoices, customers and products will be replaced by the backup. Your current data is kept aside on the phone so nothing is lost by mistake.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingRestoreUri = null
+                    viewModel.restoreFrom(uri) { restartApp(context) }
+                }) { Text("Restore") }
+            },
+            dismissButton = { TextButton(onClick = { pendingRestoreUri = null }) { Text("Cancel") } }
+        )
+    }
+
+    message?.let {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearBackupMessage() },
+            text = { Text(it) },
+            confirmButton = { TextButton(onClick = { viewModel.clearBackupMessage() }) { Text("OK") } }
+        )
+    }
+}
+
+private fun shareBackup(context: Context, file: File) {
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = "application/zip"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        putExtra(Intent.EXTRA_SUBJECT, file.name)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(send, "Save backup to...").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
+/** The database was swapped underneath the running app, so start a fresh process. */
+private fun restartApp(context: Context) {
+    val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
+    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    context.startActivity(launch)
+    Process.killProcess(Process.myPid())
 }

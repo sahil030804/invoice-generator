@@ -166,7 +166,8 @@ protected fun waitForText(text: String, timeoutMillis: Long = 30_000L) {
     }
 
     protected fun clickBottomNav(label: String) {
-        composeRule.onNodeWithText(label).performClick()
+        // Screen titles can repeat the label (e.g. "Customers"); the bottom bar is the last match.
+        composeRule.onAllNodesWithText(label).onLast().performClick()
     }
 
     protected fun clickBack() {
@@ -256,10 +257,18 @@ protected fun waitForText(text: String, timeoutMillis: Long = 30_000L) {
         setField("Name*", name)
         if (businessName.isNotBlank()) setField("Business Name", businessName)
         if (mobile.isNotBlank()) setField("Mobile", mobile)
-        if (state.isNotBlank()) setField("State", state)
+        if (state.isNotBlank()) selectState(state)
         if (gstin.isNotBlank()) setField("GSTIN", gstin)
         clickText("Save")
         waitForText(name)
+    }
+
+    /** State is a read-only dropdown: open it, then pick the option. */
+    protected fun selectState(state: String) {
+        val field = composeRule.onNodeWithText("State")
+        field.performScrollTo()
+        field.performClick()
+        composeRule.onNodeWithText(state).performClick()
     }
 
     protected fun addProduct(

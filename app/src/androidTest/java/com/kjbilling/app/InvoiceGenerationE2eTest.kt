@@ -3,6 +3,9 @@ package com.kjbilling.app
 import androidx.compose.ui.test.*
 import org.junit.Test
 
+private const val ITEM_LIMITS_ERROR =
+    "Check qty (>0), price (>0), discount (0-100% or ≥0 amount), GST (0-40%) for all items, and keep values realistic"
+
 class InvoiceGenerationE2eTest : OnboardedBase() {
 
     @Test
@@ -34,17 +37,17 @@ class InvoiceGenerationE2eTest : OnboardedBase() {
         setField("Price", "10")
         setField("Disc %", "150")
         clickText("Generate Invoice")
-        waitForText("Check qty (>0), price (>0), discount (0-100), GST (≥0) for all items")
+        waitForText(ITEM_LIMITS_ERROR)
 
         setField("Disc %", "0")
         setField("Qty", "0")
         clickText("Generate Invoice")
-        waitForText("Check qty (>0), price (>0), discount (0-100), GST (≥0) for all items")
+        waitForText(ITEM_LIMITS_ERROR)
 
         setField("Qty", "1")
         setField("Price", "0")
         clickText("Generate Invoice")
-        waitForText("Check qty (>0), price (>0), discount (0-100), GST (≥0) for all items")
+        waitForText(ITEM_LIMITS_ERROR)
 
         setField("Price", "10")
         clickText("Generate Invoice")
@@ -65,7 +68,7 @@ class InvoiceGenerationE2eTest : OnboardedBase() {
 
         // Tax rounds per line, hence .46 rather than .45.
         waitForText("₹8,383.46")
-        assertTextExists("₹7,005.00")
+        assertTextExists("₹7,555.50")
         assertTextExists("-₹550.50")
         assertTextExists("₹1,378.46")
         assertTextExists("₹8,383.46")
