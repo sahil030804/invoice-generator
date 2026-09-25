@@ -7,7 +7,10 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
+import com.kjbilling.app.domain.formatter.Initials
+import com.kjbilling.app.domain.upi.QrEncoder
 import com.kjbilling.app.pdf.InvoiceDocumentModel
+import com.kjbilling.app.pdf.QrPdfPainter
 import com.kjbilling.app.util.ImageSizing
 
 /**
@@ -177,6 +180,13 @@ class ClassicTemplateRenderer {
         isFilterBitmap = true
     }
 
+    private val qrCaptionPaint = Paint().apply {
+        color = navy
+        textSize = 11f
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        isAntiAlias = true
+    }
+
     private val cardBorderPaint = Paint().apply {
         color = hairline
         style = Paint.Style.STROKE
@@ -200,15 +210,6 @@ class ClassicTemplateRenderer {
         val rateR = 445f
         val totalR = rightEdge // 555f
         return Columns(indexR, nameLeft, nameR, qtyR, rateR, totalR)
-    }
-
-    private fun getInitials(name: String): String {
-        val words = name.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
-        return when {
-            words.isEmpty() -> "KJ"
-            words.size == 1 -> words[0].take(2).uppercase()
-            else -> "${words[0].first()}${words[1].first()}".uppercase()
-        }
     }
 
     /**
@@ -261,7 +262,7 @@ class ClassicTemplateRenderer {
         } else {
             val logoRect = RectF(margin, headerStartY, margin + logoSize, headerStartY + logoSize)
             canvas.drawRoundRect(logoRect, 8f, 8f, navyFillPaint)
-            val initials = getInitials(model.businessName)
+            val initials = Initials.of(model.businessName, fallback = "KJ")
             val initWidth = whiteLogoPaint.measureText(initials)
             canvas.drawText(initials, margin + (logoSize - initWidth) / 2f, headerStartY + 23.5f, whiteLogoPaint)
             logoSize
@@ -399,8 +400,10 @@ class ClassicTemplateRenderer {
             currentY += rowHeight
         }
 
-        // 4. Lower section: Anchored to bottom of page for single-page invoices
-        val footerHeight = 150f
+        // 4. Lower section: Anchored to bottom of page for single-page invoices.
+        // A payable invoice with a UPI ID gets a taller payment card holding a "Scan to pay" QR.
+        val qr = model.upiQr?.let { QrEncoder.encode(it.payload) }
+        val footerHeight = if (qr != null) FOOTER_HEIGHT_WITH_QR else FOOTER_HEIGHT
         if (currentY + footerHeight > pageHeight - margin) {
             drawFooter(canvas, pageNumber)
             document.finishPage(page)
@@ -489,25 +492,29 @@ class ClassicTemplateRenderer {
             leftY += wordsH + 8f
         }
 
-        // Left side: Payment Details Card
-        val payH = 32f
+        // Left side: Payment Details Card (with UPI QR when payable)
+        val upi = model.upiQr
+        val payH = if (qr != null && upi != null) PAY_CARD_HEIGHT_WITH_QR else PAY_CARD_HEIGHT
         val payRect = RectF(margin, leftY, margin + leftColW, leftY + payH)
         canvas.drawRoundRect(payRect, 4f, 4f, zebraPaint)
         canvas.drawRoundRect(payRect, 4f, 4f, cardBorderPaint)
 
-        val payTitle = if (model.paymentStatus == "PAID") "Payment Status: Paid" else "Payment Details"
-        canvas.drawText(payTitle, margin + 8f, leftY + 12f, navyBoldPaint)
-        val payLine = buildString {
-            append("Status: ").append(model.paymentStatus ?: "Pending")
-            if (!model.paymentMethod.isNullOrBlank()) append(" (").append(model.paymentMethod).append(")")
-            if (!model.amountPaid.isNullOrBlank() && model.paymentStatus == "PARTIALLY_PAID") {
-                append("  ·  Paid: ").append(model.amountPaid)
+        if (qr != null && upi != null) {
+            QrPdfPainter.draw(canvas, qr, margin + QR_PADDING, leftY + QR_PADDING, QR_SIZE)
+            val textX = margin + QR_PADDING + QR_SIZE + 10f
+            val textW = leftColW - (textX - margin) - 8f
+            canvas.drawText(truncate(model.payment.title, navyBoldPaint, textW), textX, leftY + 16f, navyBoldPaint)
+            var lineY = leftY + 16f
+            model.payment.lines.take(MAX_PAYMENT_LINES_WITH_QR).forEach { line ->
+                lineY += 11f
+                canvas.drawText(truncate(line, smallPaint, textW), textX, lineY, smallPaint)
             }
-            if (!model.balanceDue.isNullOrBlank() && model.paymentStatus != "PAID") {
-                append("  ·  Balance: ").append(model.balanceDue)
-            }
+            canvas.drawText(truncate(upi.caption, qrCaptionPaint, textW), textX, leftY + 64f, qrCaptionPaint)
+            canvas.drawText(truncate(upi.vpaLine, smallPaint, textW), textX, leftY + 77f, smallPaint)
+        } else {
+            canvas.drawText(model.payment.title, margin + 8f, leftY + 12f, navyBoldPaint)
+            canvas.drawText(truncate(model.payment.singleLine(), smallPaint, leftColW - 16f), margin + 8f, leftY + 24f, smallPaint)
         }
-        canvas.drawText(truncate(payLine, smallPaint, leftColW - 16f), margin + 8f, leftY + 24f, smallPaint)
         leftY += payH + 8f
 
         // Left side: Notes & Terms
@@ -576,6 +583,13 @@ class ClassicTemplateRenderer {
     }
 
     companion object {
+        private const val FOOTER_HEIGHT = 150f
+        private const val FOOTER_HEIGHT_WITH_QR = 204f // +54pt for the taller payment card
+        private const val PAY_CARD_HEIGHT = 32f
+        private const val PAY_CARD_HEIGHT_WITH_QR = 86f
+        private const val QR_SIZE = 72f // includes quiet zone; ~1.4pt per module for a typical UPI link
+        private const val QR_PADDING = 7f
+        private const val MAX_PAYMENT_LINES_WITH_QR = 3
         private const val LOGO_MAX_WIDTH = 90f
         private const val LOGO_MAX_HEIGHT = 44f
     }

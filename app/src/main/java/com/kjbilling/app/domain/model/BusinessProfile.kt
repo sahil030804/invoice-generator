@@ -11,6 +11,7 @@ data class BusinessProfile(
     val email: String? = null,
     val city: String? = null,
     val pincode: String? = null,
+    val upiId: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

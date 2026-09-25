@@ -37,11 +37,25 @@ A modern, offline-first, GST-compliant billing and invoice generation applicatio
 ## Core Features
 
 ### ⚡ Senior-Friendly "Quick Counter Bill" (POS Mode)
-- **Zero Typing Required**: Default customer is automatically set to `"Walk-in (Cash)"`.
+- **Zero Typing Required**: Default customer is automatically set to `"Walk-in"`, paid in cash.
 - **1-Tap Customer Selection**: Top frequent customers appear as prominent quick chips.
 - **Product Quantity Steppers**: Big `+` and `−` touch buttons to add/remove quantities without keyboard interaction.
 - **Dynamic Product Ordering**: Frequently billed items automatically sort to the top.
 - **Sticky Live Summary**: Real-time rolling total counter anchored to the bottom.
+
+### 📲 UPI "Scan to Pay" QR (fully offline)
+- Save your UPI ID once (Business Profile); customers scan a QR on the bill, the invoice screen, the printed PDF, or a standalone amount screen.
+- The QR is generated on-device (no internet), as vector art that prints crisply and scans from paper.
+
+### 📒 Udhaar / Khata (pay-later ledger)
+- Quick Bill has **Cash / UPI / Udhaar** payment modes; Udhaar bills are added to that customer's Khata.
+- See who owes what, record **money received** (oldest bills are cleared first), and send a **WhatsApp reminder** in one tap.
+
+### 🔢 Custom Amount Keypad
+- Bill anything that isn't in your catalog with a big calculator keypad. The typed amount is final: GST is carved out of it, so the customer pays exactly what you typed.
+
+### 📊 Smart Dashboard
+- Action tiles (New Invoice, Khata, UPI QR, Backup), a 7-day sales chart, bills today, top seller, and a backup reminder. History has **All / Unpaid / Today** filters with day grouping.
 
 ### 💰 Dual-Level Discount System
 - **Overall Bill Discount**: Apply a flat rupee (`₹`) or percentage (`%`) discount across the entire invoice.

@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kjbilling.app.KJInvoiceApp
+import com.kjbilling.app.data.backup.BackupShare
 import com.kjbilling.app.domain.model.TaxType
 import com.kjbilling.app.domain.model.ThemeMode
 import com.kjbilling.app.ui.components.AppTextField
@@ -28,8 +29,6 @@ import android.net.Uri
 import android.os.Process
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.FileProvider
-import java.io.File
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -264,7 +263,7 @@ private fun BackupSection(viewModel: SettingsViewModel) {
             null
         },
         modifier = Modifier.clickable(enabled = !isBusy) {
-            viewModel.backupNow { file -> shareBackup(context, file) }
+            viewModel.backupNow { file -> BackupShare.share(context, file) }
         }
     )
     ListItem(
@@ -300,17 +299,6 @@ private fun BackupSection(viewModel: SettingsViewModel) {
             confirmButton = { TextButton(onClick = { viewModel.clearBackupMessage() }) { Text("OK") } }
         )
     }
-}
-
-private fun shareBackup(context: Context, file: File) {
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-    val send = Intent(Intent.ACTION_SEND).apply {
-        type = "application/zip"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_SUBJECT, file.name)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    context.startActivity(Intent.createChooser(send, "Save backup to...").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
 /** The database was swapped underneath the running app, so start a fresh process. */

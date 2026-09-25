@@ -13,16 +13,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kjbilling.app.KJInvoiceApp
 import com.kjbilling.app.domain.formatter.CurrencyFormatter
-import com.kjbilling.app.domain.model.InvoiceStatus
 import com.kjbilling.app.domain.model.Invoice
-import com.kjbilling.app.domain.model.PaymentStatus
+import com.kjbilling.app.domain.insights.DateGrouping
+import com.kjbilling.app.domain.insights.HistoryFilter
 import com.kjbilling.app.ui.components.AppCard
+import com.kjbilling.app.ui.components.InitialsAvatar
+import com.kjbilling.app.ui.dashboard.DayHeader
 import com.kjbilling.app.ui.components.InvoiceStatusBadge
 import com.kjbilling.app.ui.theme.Dimens
 import com.kjbilling.app.ui.components.EmptyState
 import com.kjbilling.app.ui.components.SearchBar
-import java.text.SimpleDateFormat
-import java.util.*
+import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +35,7 @@ fun InvoiceHistoryScreen(
 
     val invoices by viewModel.invoices.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val filter by viewModel.filter.collectAsState()
 
     Scaffold(
         topBar = {
@@ -50,25 +52,44 @@ fun InvoiceHistoryScreen(
             SearchBar(
                 query = searchQuery,
                 onQueryChange = viewModel::onSearchQueryChange,
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
             )
+
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = Dimens.Sm),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.Sm)
+            ) {
+                FILTER_CHIPS.forEach { (option, label) ->
+                    FilterChip(
+                        selected = filter == option,
+                        onClick = { viewModel.onFilterChange(option) },
+                        label = { Text(label) }
+                    )
+                }
+            }
 
             if (invoices.isEmpty()) {
                 EmptyState(
-                    title = if (searchQuery.isNotBlank()) "No invoices found" else "No invoices yet",
+                    title = if (searchQuery.isNotBlank() || filter != HistoryFilter.ALL) "No invoices found" else "No invoices yet",
                     modifier = Modifier.weight(1f)
                 )
             } else {
+                val groups = remember(invoices) { DateGrouping.groupByDay(invoices, System.currentTimeMillis(), ZoneId.systemDefault()) }
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(horizontal = Dimens.ScreenPadding, vertical = Dimens.Sm),
                     verticalArrangement = Arrangement.spacedBy(Dimens.ListGap)
                 ) {
-                    items(invoices, key = { it.id }) { invoice ->
-                        InvoiceCard(
-                            invoice = invoice,
-                            onClick = { onNavigateToDetail(invoice.id) }
-                        )
+                    groups.forEachIndexed { index, group ->
+                        item(key = "day-$index") {
+                            DayHeader(group.label)
+                        }
+                        items(group.invoices, key = { it.id }) { invoice ->
+                            InvoiceCard(
+                                invoice = invoice,
+                                onClick = { onNavigateToDetail(invoice.id) }
+                            )
+                        }
                     }
                 }
             }
@@ -76,63 +97,49 @@ fun InvoiceHistoryScreen(
     }
 }
 
+private val FILTER_CHIPS = listOf(
+    HistoryFilter.ALL to "All",
+    HistoryFilter.UNPAID to "Unpaid",
+    HistoryFilter.TODAY to "Today"
+)
+
+/** Compact row: avatar, number + customer, amount + status. The date lives in the day header above. */
 @Composable
 fun InvoiceCard(
     invoice: Invoice,
     onClick: () -> Unit
 ) {
-    val formatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
-    val dateString = formatter.format(Date(invoice.invoiceDate))
-
     AppCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(Dimens.CardPadding),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.Md),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            InitialsAvatar(invoice.customerName)
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = invoice.invoiceNumber,
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
+                    text = invoice.customerName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(Dimens.Sm)) {
+                Text(
                     text = CurrencyFormatter.format(invoice.grandTotal),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = invoice.customerName,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = dateString,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    InvoiceStatusBadge(status = invoice.status, paymentStatus = invoice.paymentStatus)
-                }
+                InvoiceStatusBadge(status = invoice.status, paymentStatus = invoice.paymentStatus)
             }
         }
     }

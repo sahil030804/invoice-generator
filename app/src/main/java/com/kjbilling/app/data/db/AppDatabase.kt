@@ -90,12 +90,20 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v3: UPI ID for "Scan to pay" QR, and GST-inclusive flag for custom Quick Bill items. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE business_profiles ADD COLUMN upiId TEXT")
+                db.execSQL("ALTER TABLE invoice_items ADD COLUMN priceIncludesTax INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         private val SELLER_COLUMNS = listOf(
             "sellerName", "sellerAddress", "sellerPhone", "sellerEmail", "sellerGstin", "sellerOwner"
         )
 
         const val DB_NAME = "kj_invoice_database"
-        const val DB_VERSION = 2
+        const val DB_VERSION = 3
 
         /** Closes and forgets the singleton (used by restore, right before the app restarts). */
         fun closeInstance() {
@@ -112,7 +120,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .addCallback(DatabaseCallback())
                     .build()
                 INSTANCE = instance

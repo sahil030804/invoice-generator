@@ -12,6 +12,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.kjbilling.app.domain.quickbill.QuickBill
+import com.kjbilling.app.ui.components.UpiQrCard
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -57,6 +62,11 @@ fun QuickBillScreen(
     val selectedCustomer by viewModel.selectedCustomer.collectAsState()
     val itemQuantities by viewModel.itemQuantities.collectAsState()
     val cartSummary by viewModel.cartSummary.collectAsState()
+    val canGenerateBill by viewModel.canGenerate.collectAsState()
+    val paymentMode by viewModel.paymentMode.collectAsState()
+    val customItems by viewModel.customItems.collectAsState()
+    val successQr by viewModel.successQr.collectAsState()
+    var showCustomSheet by remember { mutableStateOf(false) }
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isGenerating by viewModel.isGenerating.collectAsState()
     val generatedInvoice by viewModel.generatedInvoice.collectAsState()
@@ -115,30 +125,38 @@ fun QuickBillScreen(
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     viewModel.generateBill()
                 }
-                val canGenerate = cartSummary.totalCount > 0 && !isGenerating
+                val canGenerate = canGenerateBill && !isGenerating
                 // Very large font sizes: stack total above a full-width button so neither gets squeezed.
                 val stacked = LocalDensity.current.fontScale >= STACKED_BAR_FONT_SCALE
 
-                if (stacked) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(Dimens.Sm)
-                    ) {
-                        CartSummaryText(cartSummary)
-                        GenerateBillButton(canGenerate, isGenerating, onGenerate, Modifier.fillMaxWidth())
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CartSummaryText(cartSummary, Modifier.weight(1f).padding(end = Dimens.Sm))
-                        GenerateBillButton(canGenerate, isGenerating, onGenerate)
+                Column {
+                    PaymentModeRow(
+                        selected = paymentMode,
+                        udhaarAllowed = QuickBill.canUseUdhaar(selectedCustomer),
+                        onSelect = viewModel::selectPaymentMode,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                    )
+                    if (stacked) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(Dimens.Sm)
+                        ) {
+                            CartSummaryText(cartSummary)
+                            GenerateBillButton(canGenerate, isGenerating, onGenerate, Modifier.fillMaxWidth())
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CartSummaryText(cartSummary, Modifier.weight(1f).padding(end = Dimens.Sm))
+                            GenerateBillButton(canGenerate, isGenerating, onGenerate)
+                        }
                     }
                 }
             }
@@ -193,42 +211,59 @@ fun QuickBillScreen(
                 }
             }
 
-            // Products Grid
-            if (products.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (searchQuery.isBlank()) "No products added yet" else "No matching products found",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+            if (customItems.isNotEmpty()) {
+                CustomItemChips(
+                    items = customItems,
+                    onRemove = viewModel::removeCustomItem,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                )
+            }
+
+            // Products grid; the first tile adds a custom (non-catalog) amount.
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp),
+                contentPadding = PaddingValues(top = 6.dp, bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item(key = "custom-amount") {
+                    CustomAmountTile(onClick = { showCustomSheet = true })
+                }
+                items(products, key = { it.id }) { product ->
+                    val qty = itemQuantities[product.id] ?: 0
+                    ProductCard(
+                        product = product,
+                        quantity = qty,
+                        onIncrement = { viewModel.incrementProduct(product.id) },
+                        onDecrement = { viewModel.decrementProduct(product.id) }
                     )
                 }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 12.dp),
-                    contentPadding = PaddingValues(top = 6.dp, bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(products, key = { it.id }) { product ->
-                        val qty = itemQuantities[product.id] ?: 0
-                        ProductCard(
-                            product = product,
-                            quantity = qty,
-                            onIncrement = { viewModel.incrementProduct(product.id) },
-                            onDecrement = { viewModel.decrementProduct(product.id) }
+                if (products.isEmpty()) {
+                    item(key = "empty-hint", span = { GridItemSpan(maxLineSpan) }) {
+                        Text(
+                            text = if (searchQuery.isBlank()) "No products added yet" else "No matching products found",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(24.dp)
                         )
                     }
                 }
             }
         }
+    }
+
+    if (showCustomSheet) {
+        CustomAmountSheet(
+            onAdd = { name, amount ->
+                viewModel.addCustomItem(name, amount)
+                showCustomSheet = false
+            },
+            onDismiss = { showCustomSheet = false }
+        )
     }
 
     // Bill is already saved but the PDF failed: say so, never leave the cashier guessing (a second
@@ -285,163 +320,175 @@ fun QuickBillScreen(
                     .background(MaterialTheme.colorScheme.background),
                 color = MaterialTheme.colorScheme.background
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    // Success Checkmark Icon with Spring Pop
-                    Box(
+                // Scrolls when the UPI QR (or large text) makes it taller than the screen; centred otherwise.
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    val viewportHeight = maxHeight
+                    Column(
                         modifier = Modifier
-                            .size(90.dp)
-                            .scale(checkmarkScale)
-                            .background(MaterialTheme.ext.paid.container, CircleShape),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .heightIn(min = viewportHeight)
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircle,
-                            contentDescription = "Success",
-                            tint = MaterialTheme.ext.paid.text,
-                            modifier = Modifier.size(64.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Text(
-                        text = "Bill ${invoice.invoiceNumber} Ready!",
-                        style = MaterialTheme.typography.headlineMedium,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Text(
-                        text = invoice.customerName,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Text(
-                        text = "${CurrencyFormatter.format(invoice.grandTotal)} (Paid in Cash)",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // 1. WhatsApp Action Button
-                    Button(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            InvoiceShareHelper.shareFile(
-                                context = context,
-                                file = file,
-                                invoiceNumber = invoice.invoiceNumber,
-                                customerName = invoice.customerName,
-                                grandTotal = CurrencyFormatter.format(invoice.grandTotal),
-                                targetPackage = "com.whatsapp"
+                        // Success Checkmark Icon with Spring Pop
+                        Box(
+                            modifier = Modifier
+                                .size(90.dp)
+                                .scale(checkmarkScale)
+                                .background(MaterialTheme.ext.paid.container, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CheckCircle,
+                                contentDescription = "Success",
+                                tint = MaterialTheme.ext.paid.text,
+                                modifier = Modifier.size(64.dp)
                             )
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.ext.whatsApp,
-                            contentColor = MaterialTheme.ext.onWhatsApp
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Text(
+                            text = "Bill ${invoice.invoiceNumber} Ready!",
+                            style = MaterialTheme.typography.headlineMedium,
+                            textAlign = TextAlign.Center
                         )
-                    ) {
-                        Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(22.dp))
-                        Spacer(modifier = Modifier.width(Dimens.Sm))
-                        Text("SEND ON WHATSAPP", style = MaterialTheme.typography.labelLarge)
-                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
 
-                    // 2. Print Receipt Button
-                    Button(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            InvoicePrintHelper.printPdf(context, file, "Invoice-${invoice.invoiceNumber}")
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        Text(
+                            text = invoice.customerName,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    ) {
-                        Icon(Icons.Filled.Print, contentDescription = null, modifier = Modifier.size(22.dp))
-                        Spacer(modifier = Modifier.width(Dimens.Sm))
-                        Text("PRINT RECEIPT", style = MaterialTheme.typography.labelLarge)
-                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
 
-                    // 3. Download PDF Button
-                    OutlinedButton(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            scope.launch {
-                                val result = PdfDownloadHelper.downloadPdf(context, file)
-                                when (result) {
-                                    is PdfDownloadHelper.DownloadResult.Success -> {
-                                        Toast.makeText(context, "Saved to Downloads folder!", Toast.LENGTH_SHORT).show()
-                                    }
-                                    is PdfDownloadHelper.DownloadResult.Failure -> {
-                                        Toast.makeText(context, "Failed: ${result.reason}", Toast.LENGTH_SHORT).show()
+                        Text(
+                            text = "${CurrencyFormatter.format(invoice.grandTotal)} ${QuickBill.successLabel(invoice)}",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center
+                        )
+
+                        successQr?.let { request ->
+                            Spacer(modifier = Modifier.height(20.dp))
+                            UpiQrCard(request)
+                        }
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        // 1. WhatsApp Action Button
+                        Button(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                InvoiceShareHelper.shareFile(
+                                    context = context,
+                                    file = file,
+                                    invoiceNumber = invoice.invoiceNumber,
+                                    customerName = invoice.customerName,
+                                    grandTotal = CurrencyFormatter.format(invoice.grandTotal),
+                                    targetPackage = "com.whatsapp"
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.ext.whatsApp,
+                                contentColor = MaterialTheme.ext.onWhatsApp
+                            )
+                        ) {
+                            Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(22.dp))
+                            Spacer(modifier = Modifier.width(Dimens.Sm))
+                            Text("SEND ON WHATSAPP", style = MaterialTheme.typography.labelLarge)
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // 2. Print Receipt Button
+                        Button(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                InvoicePrintHelper.printPdf(context, file, "Invoice-${invoice.invoiceNumber}")
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Icon(Icons.Filled.Print, contentDescription = null, modifier = Modifier.size(22.dp))
+                            Spacer(modifier = Modifier.width(Dimens.Sm))
+                            Text("PRINT RECEIPT", style = MaterialTheme.typography.labelLarge)
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // 3. Download PDF Button
+                        OutlinedButton(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                scope.launch {
+                                    val result = PdfDownloadHelper.downloadPdf(context, file)
+                                    when (result) {
+                                        is PdfDownloadHelper.DownloadResult.Success -> {
+                                            Toast.makeText(context, "Saved to Downloads folder!", Toast.LENGTH_SHORT).show()
+                                        }
+                                        is PdfDownloadHelper.DownloadResult.Failure -> {
+                                            Toast.makeText(context, "Failed: ${result.reason}", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
                                 }
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(Dimens.ButtonHeight),
-                        shape = MaterialTheme.shapes.medium,
-                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
-                    ) {
-                        Icon(Icons.Filled.ArrowDropDown, contentDescription = null, modifier = Modifier.size(22.dp))
-                        Spacer(modifier = Modifier.width(Dimens.Sm))
-                        Text("DOWNLOAD PDF", style = MaterialTheme.typography.labelLarge)
-                    }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(Dimens.ButtonHeight),
+                            shape = MaterialTheme.shapes.medium,
+                            border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+                        ) {
+                            Icon(Icons.Filled.ArrowDropDown, contentDescription = null, modifier = Modifier.size(22.dp))
+                            Spacer(modifier = Modifier.width(Dimens.Sm))
+                            Text("DOWNLOAD PDF", style = MaterialTheme.typography.labelLarge)
+                        }
 
-                    Spacer(modifier = Modifier.height(28.dp))
+                        Spacer(modifier = Modifier.height(28.dp))
 
-                    // 4. Start Next Bill Button (Large & Prominent)
-                    FilledTonalButton(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        // 4. Start Next Bill Button (Large & Prominent)
+                        FilledTonalButton(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                viewModel.resetForNextBill()
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(Dimens.ButtonHeight),
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.ext.action,
+                                contentColor = MaterialTheme.ext.onAction
+                            )
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(22.dp))
+                            Spacer(modifier = Modifier.width(Dimens.Sm))
+                            Text("⚡ START NEXT BILL", style = MaterialTheme.typography.labelLarge)
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        TextButton(onClick = {
+                            val invoiceId = invoice.id
                             viewModel.resetForNextBill()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(Dimens.ButtonHeight),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = MaterialTheme.ext.action,
-                            contentColor = MaterialTheme.ext.onAction
-                        )
-                    ) {
-                        Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(22.dp))
-                        Spacer(modifier = Modifier.width(Dimens.Sm))
-                        Text("⚡ START NEXT BILL", style = MaterialTheme.typography.labelLarge)
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    TextButton(onClick = {
-                        val invoiceId = invoice.id
-                        viewModel.resetForNextBill()
-                        onNavigateToDetail(invoiceId)
-                    }) {
-                        Text("View Full Invoice Details", color = MaterialTheme.colorScheme.primary)
+                            onNavigateToDetail(invoiceId)
+                        }) {
+                            Text("View Full Invoice Details", color = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
             }
@@ -485,7 +532,7 @@ private fun CustomerSelectionSection(
                     },
                     label = {
                         Text(
-                            text = if (isSelected) "✓ Walk-in (Cash)" else "Walk-in (Cash)",
+                            text = if (isSelected) "✓ Walk-in" else "Walk-in",
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
                     },

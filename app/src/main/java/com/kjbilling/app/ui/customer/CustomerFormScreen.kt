@@ -18,6 +18,7 @@ import com.kjbilling.app.domain.validator.GstinValidator
 import com.kjbilling.app.domain.validator.StateResolver
 import com.kjbilling.app.ui.components.AppTextField
 import com.kjbilling.app.ui.components.PrimaryButton
+import com.kjbilling.app.ui.components.SectionCard
 import com.kjbilling.app.ui.settings.INDIAN_STATES
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,103 +90,109 @@ fun CustomerFormScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            AppTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = "Name*",
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            AppTextField(
-                value = businessName,
-                onValueChange = { businessName = it },
-                label = "Business Name",
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            AppTextField(
-                value = mobile,
-                onValueChange = { mobile = it },
-                label = "Mobile",
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            AppTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = "Email",
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            AppTextField(
-                value = address,
-                onValueChange = { address = it },
-                label = "Billing Address",
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            var stateMenuOpen by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = stateMenuOpen,
-                onExpandedChange = { stateMenuOpen = !stateMenuOpen }
-            ) {
+            SectionCard(title = "Contact details") {
                 AppTextField(
-                    value = state,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = "State",
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = stateMenuOpen) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                    value = name,
+                    onValueChange = { name = it },
+                    label = "Name*",
+                    modifier = Modifier.fillMaxWidth()
                 )
-                ExposedDropdownMenu(
+
+                AppTextField(
+                    value = businessName,
+                    onValueChange = { businessName = it },
+                    label = "Business Name",
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                AppTextField(
+                    value = mobile,
+                    onValueChange = { mobile = it },
+                    label = "Mobile",
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                AppTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = "Email",
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            SectionCard(title = "Address & tax") {
+                AppTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = "Billing Address",
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                var stateMenuOpen by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
                     expanded = stateMenuOpen,
-                    onDismissRequest = { stateMenuOpen = false }
+                    onExpandedChange = { stateMenuOpen = !stateMenuOpen }
                 ) {
-                    INDIAN_STATES.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option) },
-                            onClick = {
-                                state = option
-                                stateMenuOpen = false
-                            }
-                        )
+                    AppTextField(
+                        value = state,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = "State",
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = stateMenuOpen) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = stateMenuOpen,
+                        onDismissRequest = { stateMenuOpen = false }
+                    ) {
+                        INDIAN_STATES.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    state = option
+                                    stateMenuOpen = false
+                                }
+                            )
+                        }
                     }
+                }
+
+                AppTextField(
+                    value = pincode,
+                    onValueChange = { pincode = it },
+                    label = "Pincode",
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                AppTextField(
+                    value = gstin,
+                    onValueChange = { input ->
+                        gstin = input.uppercase()
+                        // The GSTIN's first two digits fix the state, so keep the state field in sync.
+                        StateResolver.fromGstin(gstin)?.let { state = it }
+                    },
+                    label = "GSTIN",
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = !isGstinValid
+                )
+                if (!isGstinValid && gstin.isNotBlank()) {
+                    Text(
+                        text = "Invalid GSTIN format",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
 
-            AppTextField(
-                value = pincode,
-                onValueChange = { pincode = it },
-                label = "Pincode",
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            AppTextField(
-                value = gstin,
-                onValueChange = { input ->
-                    gstin = input.uppercase()
-                    // The GSTIN's first two digits fix the state, so keep the state field in sync.
-                    StateResolver.fromGstin(gstin)?.let { state = it }
-                },
-                label = "GSTIN",
-                modifier = Modifier.fillMaxWidth(),
-                isError = !isGstinValid
-            )
-            if (!isGstinValid && gstin.isNotBlank()) {
-                Text(
-                    text = "Invalid GSTIN format",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
+            SectionCard(title = "Extra") {
+                AppTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = "Notes",
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = false
                 )
             }
-
-            AppTextField(
-                value = notes,
-                onValueChange = { notes = it },
-                label = "Notes",
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = false
-            )
 
             Spacer(modifier = Modifier.height(16.dp))
 

@@ -74,14 +74,43 @@ interface InvoiceDao {
     @Query("UPDATE invoices SET status = :status WHERE id = :id")
     suspend fun updateStatus(id: Long, status: InvoiceStatus)
 
-    @Query("UPDATE invoices SET paymentStatus = :paymentStatus, paymentMethod = :paymentMethod, amountPaid = :amountPaid WHERE id = :id")
-    suspend fun updatePaymentInfo(
+    /** One statement so payment and status can never disagree. */
+    @Query(
+        "UPDATE invoices SET paymentStatus = :paymentStatus, paymentMethod = :paymentMethod, " +
+            "amountPaid = :amountPaid, status = :status, updatedAt = :updatedAt WHERE id = :id"
+    )
+    suspend fun updatePaymentAndStatus(
         id: Long,
         paymentStatus: PaymentStatus,
         paymentMethod: PaymentMethod?,
-        amountPaid: String
+        amountPaid: String,
+        status: InvoiceStatus,
+        updatedAt: Long
     )
+
+    @Query("SELECT * FROM invoices WHERE customerId = :customerId ORDER BY invoiceDate DESC")
+    fun observeByCustomer(customerId: Long): Flow<List<InvoiceEntity>>
+
+    /** Lines sold since [since] (millis) on non-cancelled bills, for "Top seller". Sums are done in Kotlin (amounts are TEXT). */
+    @Query(
+        "SELECT ii.productId AS productId, ii.itemName AS name, ii.quantity AS quantity, ii.total AS revenue, " +
+            "i.invoiceDate AS invoiceDate FROM invoice_items ii INNER JOIN invoices i ON i.id = ii.invoiceId " +
+            "WHERE i.invoiceDate >= :since AND i.status != 'CANCELLED'"
+    )
+    fun observeSoldItemsSince(since: Long): Flow<List<SoldItemRow>>
+
+    @Query("SELECT * FROM invoices WHERE customerId = :customerId AND status != 'CANCELLED'")
+    suspend fun getNonCancelledByCustomer(customerId: Long): List<InvoiceEntity>
 
     @Query("DELETE FROM invoices WHERE id = :id AND status = 'DRAFT'")
     suspend fun deleteDraft(id: Long)
 }
+
+/** Query result row for [InvoiceDao.observeSoldItemsSince]. */
+data class SoldItemRow(
+    val productId: Long?,
+    val name: String,
+    val quantity: BigDecimal,
+    val revenue: BigDecimal,
+    val invoiceDate: Long
+)

@@ -7,6 +7,7 @@ import com.kjbilling.app.domain.model.BusinessSnapshot
 import com.kjbilling.app.domain.model.Invoice
 import com.kjbilling.app.domain.model.TaxBreakdown
 import com.kjbilling.app.domain.model.TaxType
+import com.kjbilling.app.domain.upi.UpiPayment
 import java.math.BigDecimal
 
 data class InvoiceDocumentModel(
@@ -40,11 +41,9 @@ data class InvoiceDocumentModel(
     val amountInWords: String,
     // Tax type
     val taxType: TaxType,
-    // Payment (null when unpaid to avoid leaking UNPAID/₹0 rows)
-    val paymentStatus: String?,
-    val amountPaid: String?,
-    val balanceDue: String?,
-    val paymentMethod: String?,
+    // Payment card text, and optional UPI "Scan to pay" QR (only when something is payable)
+    val payment: PaymentSummary,
+    val upiQr: DocumentUpiQr?,
     // Footer
     val notes: String?,
     val terms: String?,
@@ -104,10 +103,10 @@ data class InvoiceDocumentModel(
                         val taxableLabel = CurrencyFormatter.format(tb.taxableAmount)
                         if (invoice.taxType == TaxType.CGST_SGST) {
                             val halfRate = tb.gstRate.divide(BigDecimal("2"), 2, java.math.RoundingMode.HALF_UP)
-                            val halfAmount = tb.totalTax.divide(BigDecimal("2"), 2, java.math.RoundingMode.HALF_UP)
                             val halfLabel = halfRate.stripTrailingZeros().toPlainString()
-                            taxSummaryRows.add(DocumentTaxRow("CGST @ $halfLabel% on $taxableLabel", CurrencyFormatter.format(halfAmount)))
-                            taxSummaryRows.add(DocumentTaxRow("SGST @ $halfLabel% on $taxableLabel", CurrencyFormatter.format(halfAmount)))
+                            // Actual per-line split: halving the total is a paisa off when the tax is odd.
+                            taxSummaryRows.add(DocumentTaxRow("CGST @ $halfLabel% on $taxableLabel", CurrencyFormatter.format(tb.cgstAmount)))
+                            taxSummaryRows.add(DocumentTaxRow("SGST @ $halfLabel% on $taxableLabel", CurrencyFormatter.format(tb.sgstAmount)))
                         } else {
                             taxSummaryRows.add(DocumentTaxRow("IGST @ $rateLabel% on $taxableLabel", CurrencyFormatter.format(tb.totalTax)))
                         }
@@ -116,7 +115,7 @@ data class InvoiceDocumentModel(
             }
 
             val hasTax = taxBreakdown.any { it.totalTax > BigDecimal.ZERO }
-            val showPayment = invoice.amountPaid > BigDecimal.ZERO || invoice.paymentStatus != com.kjbilling.app.domain.model.PaymentStatus.UNPAID
+            val upi = UpiPayment.forInvoice(invoice, business)
 
             // Frozen at issue time; the live profile is only a fallback for invoices without a snapshot.
             val seller = invoice.seller ?: BusinessSnapshot.from(business)
@@ -145,10 +144,10 @@ data class InvoiceDocumentModel(
                 grandTotal = CurrencyFormatter.format(invoice.grandTotal),
                 amountInWords = AmountInWords.convert(invoice.grandTotal),
                 taxType = invoice.taxType,
-                paymentStatus = if (showPayment) invoice.paymentStatus.name else null,
-                amountPaid = if (showPayment) CurrencyFormatter.format(invoice.amountPaid) else null,
-                balanceDue = if (showPayment) CurrencyFormatter.format(invoice.balanceDue) else null,
-                paymentMethod = invoice.paymentMethod?.name,
+                payment = PaymentSummary.build(invoice.paymentStatus, invoice.paymentMethod, invoice.amountPaid, invoice.balanceDue),
+                upiQr = upi?.let {
+                    DocumentUpiQr(payload = it.uri, caption = "Scan to pay ${it.amountLabel}", vpaLine = "UPI: ${it.vpa}")
+                },
                 notes = invoice.notes?.takeIf { it.isNotBlank() },
                 terms = DECLARATION,
                 signatureName = seller.ownerName,
@@ -182,4 +181,10 @@ data class DocumentHsnRow(
     val taxableAmount: String,
     val taxAmount: String,
     val total: String
+)
+
+data class DocumentUpiQr(
+    val payload: String,
+    val caption: String,
+    val vpaLine: String
 )

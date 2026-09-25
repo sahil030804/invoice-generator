@@ -10,6 +10,7 @@ import com.kjbilling.app.data.repository.InvoiceRepository
 import com.kjbilling.app.data.repository.ProductRepository
 import com.kjbilling.app.di.AppContainer
 import com.kjbilling.app.domain.calculator.InvoiceCalculator
+import com.kjbilling.app.domain.calculator.InvoiceItemCalculation
 import com.kjbilling.app.domain.calculator.InvoiceTotals
 import com.kjbilling.app.domain.model.*
 import com.kjbilling.app.domain.validator.InvoiceValidator
@@ -36,7 +37,9 @@ data class InvoiceItemUiState(
     val discountPercent: String = "0",
     val discountAmount: String = "",
     val discountType: DiscountType = DiscountType.PERCENT,
-    val gstRate: String = "" // empty means use default
+    val gstRate: String = "", // empty means use default
+    // Custom Quick Bill amount: unitPrice already includes GST and has no discount.
+    val taxInclusive: Boolean = false
 )
 
 class InvoiceCreateViewModel(
@@ -107,31 +110,7 @@ class InvoiceCreateViewModel(
         _invoiceDiscountValue,
         _invoiceDiscountType
     ) { itemsList, tax, defaultGst, discVal, discType ->
-        val mappedItems = itemsList.mapNotNull { uiItem ->
-            val qty = uiItem.quantity.toBigDecimalOrNull() ?: BigDecimal.ZERO
-            val price = uiItem.unitPrice.toBigDecimalOrNull() ?: BigDecimal.ZERO
-            if (qty <= BigDecimal.ZERO || price <= BigDecimal.ZERO) return@mapNotNull null
-
-            val discPercent = if (uiItem.discountType == DiscountType.PERCENT) {
-                uiItem.discountPercent.toBigDecimalOrNull() ?: BigDecimal.ZERO
-            } else {
-                BigDecimal.ZERO
-            }
-            val discAmount = if (uiItem.discountType == DiscountType.AMOUNT) {
-                uiItem.discountAmount.toBigDecimalOrNull()
-            } else {
-                null
-            }
-
-            invoiceCalculator.calculateItem(
-                quantity = qty,
-                unitPrice = price,
-                discountPercent = discPercent,
-                gstRate = uiItem.gstRate.toBigDecimalOrNull() ?: defaultGst,
-                taxType = tax,
-                discountAmount = discAmount
-            )
-        }
+        val mappedItems = itemsList.mapNotNull { uiItem -> calculate(uiItem, tax, defaultGst) }
 
         val overallDiscPercent = if (discType == DiscountType.PERCENT) {
             discVal.toBigDecimalOrNull() ?: BigDecimal.ZERO
@@ -264,11 +243,12 @@ class InvoiceCreateViewModel(
                     hsnCode = item.hsnCode ?: "",
                     quantity = item.quantity.stripTrailingZeros().toPlainString(),
                     unit = item.unit ?: "PCS",
-                    unitPrice = item.unitPrice.stripTrailingZeros().toPlainString(),
+                    unitPrice = inclusiveOrUnitPrice(item).stripTrailingZeros().toPlainString(),
                     discountPercent = item.discountPercent.stripTrailingZeros().toPlainString(),
                     discountAmount = item.discountAmount.stripTrailingZeros().toPlainString(),
                     discountType = if (hasPercent) DiscountType.PERCENT else if (hasAmount) DiscountType.AMOUNT else DiscountType.PERCENT,
-                    gstRate = item.gstRate.stripTrailingZeros().toPlainString()
+                    gstRate = item.gstRate.stripTrailingZeros().toPlainString(),
+                    taxInclusive = item.priceIncludesTax
                 )
             }
         }
@@ -333,46 +313,7 @@ class InvoiceCreateViewModel(
                     }
 
                     val domainItems = _items.value.mapIndexed { index, uiItem ->
-                        val qty = uiItem.quantity.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                        val price = uiItem.unitPrice.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                        val discPercent = if (uiItem.discountType == DiscountType.PERCENT) {
-                            uiItem.discountPercent.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                        } else {
-                            BigDecimal.ZERO
-                        }
-                        val discAmount = if (uiItem.discountType == DiscountType.AMOUNT) {
-                            uiItem.discountAmount.toBigDecimalOrNull()
-                        } else {
-                            null
-                        }
-                        val calc = invoiceCalculator.calculateItem(
-                            quantity = qty,
-                            unitPrice = price,
-                            discountPercent = discPercent,
-                            gstRate = uiItem.gstRate.toBigDecimalOrNull() ?: defaultGstRate.value,
-                            taxType = _taxType.value,
-                            discountAmount = discAmount
-                        )
-                        InvoiceItem(
-                            id = 0L,
-                            invoiceId = existing.id,
-                            productId = uiItem.productId,
-                            itemName = uiItem.name,
-                            hsnCode = uiItem.hsnCode.takeIf { it.isNotBlank() },
-                            quantity = qty,
-                            unit = uiItem.unit,
-                            unitPrice = price,
-                            discountPercent = if (uiItem.discountType == DiscountType.PERCENT) discPercent else if (calc.itemAmount > BigDecimal.ZERO) calc.discountAmount.multiply(BigDecimal("100")).divide(calc.itemAmount, 2, java.math.RoundingMode.HALF_UP) else BigDecimal.ZERO,
-                            discountAmount = calc.discountAmount,
-                            gstRate = calc.gstRate,
-                            taxableAmount = calc.taxableAmount,
-                            cgstAmount = calc.cgstAmount,
-                            sgstAmount = calc.sgstAmount,
-                            igstAmount = calc.igstAmount,
-                            taxAmount = calc.taxAmount,
-                            total = calc.total,
-                            sortOrder = index
-                        )
+                        toDomainItem(uiItem, index, existing.id, _taxType.value, defaultGstRate.value)
                     }
 
                     val oldPaid = existing.amountPaid
@@ -425,46 +366,7 @@ class InvoiceCreateViewModel(
                     _updateSuccess.value = true
                 } else {
                     val domainItems = _items.value.mapIndexed { index, uiItem ->
-                        val qty = uiItem.quantity.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                        val price = uiItem.unitPrice.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                        val discPercent = if (uiItem.discountType == DiscountType.PERCENT) {
-                            uiItem.discountPercent.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                        } else {
-                            BigDecimal.ZERO
-                        }
-                        val discAmount = if (uiItem.discountType == DiscountType.AMOUNT) {
-                            uiItem.discountAmount.toBigDecimalOrNull()
-                        } else {
-                            null
-                        }
-                        val calc = invoiceCalculator.calculateItem(
-                            quantity = qty,
-                            unitPrice = price,
-                            discountPercent = discPercent,
-                            gstRate = uiItem.gstRate.toBigDecimalOrNull() ?: defaultGstRate.value,
-                            taxType = _taxType.value,
-                            discountAmount = discAmount
-                        )
-                        InvoiceItem(
-                            id = 0L,
-                            invoiceId = 0L,
-                            productId = uiItem.productId,
-                            itemName = uiItem.name,
-                            hsnCode = uiItem.hsnCode.takeIf { it.isNotBlank() },
-                            quantity = qty,
-                            unit = uiItem.unit,
-                            unitPrice = price,
-                            discountPercent = if (uiItem.discountType == DiscountType.PERCENT) discPercent else if (calc.itemAmount > BigDecimal.ZERO) calc.discountAmount.multiply(BigDecimal("100")).divide(calc.itemAmount, 2, java.math.RoundingMode.HALF_UP) else BigDecimal.ZERO,
-                            discountAmount = calc.discountAmount,
-                            gstRate = calc.gstRate,
-                            taxableAmount = calc.taxableAmount,
-                            cgstAmount = calc.cgstAmount,
-                            sgstAmount = calc.sgstAmount,
-                            igstAmount = calc.igstAmount,
-                            taxAmount = calc.taxAmount,
-                            total = calc.total,
-                            sortOrder = index
-                        )
+                        toDomainItem(uiItem, index, 0L, _taxType.value, defaultGstRate.value)
                     }
 
                     val invoice = Invoice(
@@ -509,6 +411,94 @@ class InvoiceCreateViewModel(
                 _isGenerating.value = false
             }
         }
+    }
+
+    /** Line maths for one editor row; null while qty/price are incomplete. */
+    private fun calculate(uiItem: InvoiceItemUiState, taxType: TaxType, defaultGst: BigDecimal): InvoiceItemCalculation? {
+        val qty = uiItem.quantity.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        val price = uiItem.unitPrice.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        if (qty <= BigDecimal.ZERO || price <= BigDecimal.ZERO) {
+            return null
+        }
+        val gstRate = uiItem.gstRate.toBigDecimalOrNull() ?: defaultGst
+
+        if (uiItem.taxInclusive) {
+            // Keeps a Quick Bill custom amount exact when the bill is edited (no ₹0.01 drift).
+            return invoiceCalculator.calculateInclusiveItem(qty.multiply(price), gstRate, taxType)
+        }
+
+        val discPercent = if (uiItem.discountType == DiscountType.PERCENT) {
+            uiItem.discountPercent.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        } else {
+            BigDecimal.ZERO
+        }
+        val discAmount = if (uiItem.discountType == DiscountType.AMOUNT) {
+            uiItem.discountAmount.toBigDecimalOrNull()
+        } else {
+            null
+        }
+        return invoiceCalculator.calculateItem(
+            quantity = qty,
+            unitPrice = price,
+            discountPercent = discPercent,
+            gstRate = gstRate,
+            taxType = taxType,
+            discountAmount = discAmount
+        )
+    }
+
+    private fun toDomainItem(
+        uiItem: InvoiceItemUiState,
+        index: Int,
+        invoiceId: Long,
+        taxType: TaxType,
+        defaultGst: BigDecimal
+    ): InvoiceItem {
+        val qty = uiItem.quantity.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        val price = uiItem.unitPrice.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        val calc = calculate(uiItem, taxType, defaultGst)
+            ?: invoiceCalculator.calculateItem(qty, price, gstRate = BigDecimal.ZERO, taxType = taxType)
+        val discPercent = when {
+            uiItem.taxInclusive -> BigDecimal.ZERO
+            uiItem.discountType == DiscountType.PERCENT -> uiItem.discountPercent.toBigDecimalOrNull() ?: BigDecimal.ZERO
+            calc.itemAmount > BigDecimal.ZERO -> calc.discountAmount.multiply(BigDecimal("100")).divide(calc.itemAmount, 2, java.math.RoundingMode.HALF_UP)
+            else -> BigDecimal.ZERO
+        }
+        // Inclusive lines store the taxable value per unit (what the PDF "Rate" column shows).
+        val storedUnitPrice = if (uiItem.taxInclusive && qty > BigDecimal.ZERO) {
+            calc.taxableAmount.divide(qty, 2, java.math.RoundingMode.HALF_UP)
+        } else {
+            price
+        }
+        return InvoiceItem(
+            id = 0L,
+            invoiceId = invoiceId,
+            productId = uiItem.productId,
+            itemName = uiItem.name,
+            hsnCode = uiItem.hsnCode.takeIf { it.isNotBlank() },
+            quantity = qty,
+            unit = uiItem.unit,
+            unitPrice = storedUnitPrice,
+            discountPercent = discPercent,
+            discountAmount = calc.discountAmount,
+            gstRate = calc.gstRate,
+            taxableAmount = calc.taxableAmount,
+            cgstAmount = calc.cgstAmount,
+            sgstAmount = calc.sgstAmount,
+            igstAmount = calc.igstAmount,
+            taxAmount = calc.taxAmount,
+            total = calc.total,
+            sortOrder = index,
+            priceIncludesTax = uiItem.taxInclusive
+        )
+    }
+
+    /** Inclusive items are edited as "amount per unit incl. GST"; others as their plain unit price. */
+    private fun inclusiveOrUnitPrice(item: InvoiceItem): BigDecimal {
+        if (!item.priceIncludesTax || item.quantity <= BigDecimal.ZERO) {
+            return item.unitPrice
+        }
+        return item.total.divide(item.quantity, 2, java.math.RoundingMode.HALF_UP)
     }
 
     companion object {

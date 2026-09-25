@@ -10,13 +10,18 @@ import com.kjbilling.app.domain.calculator.InvoiceCalculator
 import com.kjbilling.app.domain.model.InvoiceStatus
 import com.kjbilling.app.domain.model.Invoice
 import com.kjbilling.app.domain.model.PaymentMethod
-import com.kjbilling.app.domain.model.PaymentStatus
+import com.kjbilling.app.domain.payment.PaymentRules
+import com.kjbilling.app.domain.upi.UpiPayment
+import com.kjbilling.app.domain.upi.UpiQrRequest
 import com.kjbilling.app.pdf.InvoicePdfGenerator
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
 import java.math.BigDecimal
@@ -40,6 +45,11 @@ class InvoiceDetailViewModel(
     private val _isDownloading = MutableStateFlow(false)
     val isDownloading: StateFlow<Boolean> = _isDownloading
 
+    /** "Scan to pay" QR for the balance due; null when paid, cancelled or no UPI ID is set. */
+    val upiQr: StateFlow<UpiQrRequest?> = combine(_invoice, businessProfileRepository.getProfile()) { invoice, profile ->
+        invoice?.let { UpiPayment.forInvoice(it, profile) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+
     fun loadInvoice(invoiceId: Long) {
         viewModelScope.launch {
             _invoice.value = invoiceRepository.getById(invoiceId)
@@ -59,35 +69,13 @@ class InvoiceDetailViewModel(
     fun recordPayment(amount: BigDecimal, method: PaymentMethod?) {
         viewModelScope.launch {
             val current = _invoice.value ?: return@launch
-            if (current.status == InvoiceStatus.CANCELLED) {
-                return@launch
-            }
-            if (amount <= BigDecimal.ZERO || amount > current.balanceDue) {
-                return@launch
-            }
-            // Payments accumulate; never exceed the grand total.
-            val newAmountPaid = (current.amountPaid + amount).min(current.grandTotal)
-            val newStatus = if (newAmountPaid >= current.grandTotal) {
-                PaymentStatus.PAID
-            } else {
-                PaymentStatus.PARTIAL
-            }
-            val newInvoiceStatus = if (newStatus == PaymentStatus.PAID) {
-                InvoiceStatus.PAID
-            } else if (current.status == InvoiceStatus.PAID) {
-                InvoiceStatus.GENERATED
-            } else {
-                current.status
-            }
-            invoiceRepository.updatePayment(current.id, newStatus, method, newAmountPaid)
-            if (newInvoiceStatus != current.status) {
-                invoiceRepository.updateStatus(current.id, newInvoiceStatus)
-            }
+            val update = PaymentRules.apply(current, amount) ?: return@launch
+            invoiceRepository.applyPayment(current.id, update, method)
             _invoice.value = current.copy(
-                paymentStatus = newStatus,
+                paymentStatus = update.paymentStatus,
                 paymentMethod = method,
-                amountPaid = newAmountPaid,
-                status = newInvoiceStatus
+                amountPaid = update.amountPaid,
+                status = update.status
             )
         }
     }
@@ -174,6 +162,7 @@ class InvoiceDetailViewModel(
     }
 
     companion object {
+        private const val STOP_TIMEOUT_MS = 5000L
         fun factory(container: AppContainer) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {

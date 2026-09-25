@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.kjbilling.app.domain.formatter.label
 import com.kjbilling.app.domain.model.PaymentMethod
 import java.math.BigDecimal
 
@@ -63,7 +64,8 @@ fun PaymentDialog(
     var method by remember { mutableStateOf(currentMethod ?: PaymentMethod.CASH) }
     var methodExpanded by remember { mutableStateOf(false) }
     val parsed = amountStr.toBigDecimalOrNull()
-    val isValid = parsed != null && parsed > BigDecimal.ZERO && parsed <= grandTotal
+    // Only the remaining balance can be paid; larger amounts used to be silently ignored.
+    val isValid = parsed != null && parsed > BigDecimal.ZERO && parsed <= balance
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -75,7 +77,7 @@ fun PaymentDialog(
                     onValueChange = { amountStr = it },
                     label = "Amount (Balance ${balance.stripTrailingZeros().toPlainString()})",
                     isError = !isValid && amountStr.isNotBlank(),
-                    errorMessage = if (!isValid && amountStr.isNotBlank()) "Enter 0 < amount ≤ total" else null,
+                    errorMessage = if (!isValid && amountStr.isNotBlank()) "Enter 0 < amount ≤ balance" else null,
                     modifier = Modifier.fillMaxWidth()
                 )
                 ExposedDropdownMenuBox(
@@ -83,7 +85,7 @@ fun PaymentDialog(
                     onExpandedChange = { methodExpanded = !methodExpanded }
                 ) {
                     AppTextField(
-                        value = method.name,
+                        value = method.label(),
                         onValueChange = {},
                         readOnly = true,
                         label = "Payment Method",
@@ -97,7 +99,7 @@ fun PaymentDialog(
                     ) {
                         PaymentMethod.values().forEach { option ->
                             DropdownMenuItem(
-                                text = { Text(option.name) },
+                                text = { Text(option.label()) },
                                 onClick = {
                                     method = option
                                     methodExpanded = false

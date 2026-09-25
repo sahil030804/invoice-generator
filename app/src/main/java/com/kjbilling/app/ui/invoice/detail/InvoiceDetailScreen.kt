@@ -27,12 +27,19 @@ import com.kjbilling.app.domain.model.InvoiceStatus
 import com.kjbilling.app.domain.model.PaymentStatus
 import com.kjbilling.app.pdf.InvoiceShareHelper
 import com.kjbilling.app.pdf.PdfDownloadHelper
+import com.kjbilling.app.ui.components.ActionButton
 import com.kjbilling.app.ui.components.ConfirmationDialog
+import com.kjbilling.app.ui.components.UpiQrCard
 import com.kjbilling.app.ui.components.PaymentDialog
 import com.kjbilling.app.ui.components.PrimaryButton
 import com.kjbilling.app.ui.components.SecondaryButton
 import com.kjbilling.app.ui.components.TotalCard
 import com.kjbilling.app.ui.components.AppCard
+import java.util.Locale
+import java.util.Date
+import java.text.SimpleDateFormat
+import com.kjbilling.app.ui.theme.Dimens
+import com.kjbilling.app.ui.components.InitialsAvatar
 import com.kjbilling.app.ui.components.InvoiceStatusBadge
 import kotlinx.coroutines.launch
 
@@ -58,12 +65,14 @@ fun InvoiceDetailScreen(
     val currentInvoice by viewModel.invoice.collectAsState()
     val generatedFile by viewModel.generatedFile.collectAsState()
     val isDownloading by viewModel.isDownloading.collectAsState()
+    val upiQr by viewModel.upiQr.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     var showCancelDialog by remember { mutableStateOf(false) }
     var showPaymentDialog by remember { mutableStateOf(false) }
+    var showUpiQr by remember { mutableStateOf(false) }
 
     val legacyPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -165,39 +174,45 @@ fun InvoiceDetailScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Customer Info
+                // Summary: who, which bill, and where it stands. One card instead of two + a loose badge.
                 AppCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Customer", style = MaterialTheme.typography.labelMedium)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(invoice.customerName, style = MaterialTheme.typography.titleMedium)
-                        if (!invoice.customerGstin.isNullOrBlank()) {
-                            Text("GSTIN: ${invoice.customerGstin}", style = MaterialTheme.typography.bodyMedium)
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(Dimens.Md)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.spacedBy(Dimens.Md)
+                        ) {
+                            InitialsAvatar(invoice.customerName, size = 52.dp)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Customer", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(invoice.customerName, style = MaterialTheme.typography.titleMedium)
+                                if (!invoice.customerGstin.isNullOrBlank()) {
+                                    Text("GSTIN: ${invoice.customerGstin}", style = MaterialTheme.typography.bodyMedium)
+                                }
+                                if (!invoice.customerAddress.isNullOrBlank()) {
+                                    Text(invoice.customerAddress, style = MaterialTheme.typography.bodyMedium)
+                                }
+                                if (!invoice.customerState.isNullOrBlank()) {
+                                    Text("State: ${invoice.customerState}", style = MaterialTheme.typography.bodyMedium)
+                                }
+                            }
+                            InvoiceStatusBadge(status = invoice.status, paymentStatus = invoice.paymentStatus)
                         }
-                        if (!invoice.customerAddress.isNullOrBlank()) {
-                            Text(invoice.customerAddress, style = MaterialTheme.typography.bodyMedium)
-                        }
-                        if (!invoice.customerState.isNullOrBlank()) {
-                            Text("State: ${invoice.customerState}", style = MaterialTheme.typography.bodyMedium)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Invoice ${invoice.invoiceNumber}", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(invoice.invoiceDate)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            invoice.paymentMethod?.let {
+                                Text("Method: ${it.name}", style = MaterialTheme.typography.bodyMedium)
+                            }
+                            Text("Paid: ${CurrencyFormatter.format(invoice.amountPaid)}", style = MaterialTheme.typography.bodyMedium)
+                            Text("Balance: ${CurrencyFormatter.format(invoice.balanceDue)}", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
-                }
-
-                // Invoice meta
-                AppCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Invoice ${invoice.invoiceNumber}", style = MaterialTheme.typography.titleSmall)
-                        invoice.paymentMethod?.let {
-                            Text("Method: ${it.name}", style = MaterialTheme.typography.bodyMedium)
-                        }
-                        Text("Paid: ${CurrencyFormatter.format(invoice.amountPaid)}", style = MaterialTheme.typography.bodyMedium)
-                        Text("Balance: ${CurrencyFormatter.format(invoice.balanceDue)}", style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-
-                // Status Info
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    InvoiceStatusBadge(status = invoice.status, paymentStatus = invoice.paymentStatus)
                 }
 
                 // Items list
@@ -239,6 +254,14 @@ fun InvoiceDetailScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (invoice.status != InvoiceStatus.CANCELLED) {
+                    if (upiQr != null) {
+                        ActionButton(
+                            text = "Show UPI QR",
+                            onClick = { showUpiQr = true },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
                     if (invoice.paymentStatus != PaymentStatus.PAID) {
                         PrimaryButton(
                             text = "Record Payment",
@@ -256,6 +279,16 @@ fun InvoiceDetailScreen(
                     }
                 }
             }
+        }
+    }
+
+    upiQr?.let { request ->
+        if (showUpiQr) {
+            AlertDialog(
+                onDismissRequest = { showUpiQr = false },
+                text = { UpiQrCard(request) },
+                confirmButton = { TextButton(onClick = { showUpiQr = false }) { Text("Close") } }
+            )
         }
     }
 

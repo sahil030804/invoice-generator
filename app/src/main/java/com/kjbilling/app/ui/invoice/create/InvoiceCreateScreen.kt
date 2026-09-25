@@ -382,7 +382,7 @@ fun InvoiceItemEditor(
                         MoneyInput(
                             value = item.unitPrice,
                             onValueChange = { onUpdate(item.copy(unitPrice = it)) },
-                            label = "Price",
+                            label = if (item.taxInclusive) "Amount (incl. GST)" else "Price",
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -390,28 +390,30 @@ fun InvoiceItemEditor(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Discount input with % / ₹ toggle
-                        Row(
-                            modifier = Modifier.weight(1.3f),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            AppTextField(
-                                value = if (item.discountType == DiscountType.PERCENT) item.discountPercent else item.discountAmount,
-                                onValueChange = {
-                                    if (item.discountType == DiscountType.PERCENT) {
-                                        onUpdate(item.copy(discountPercent = it))
-                                    } else {
-                                        onUpdate(item.copy(discountAmount = it))
-                                    }
-                                },
-                                label = if (item.discountType == DiscountType.PERCENT) "Disc %" else "Disc ₹",
-                                modifier = Modifier.weight(1f)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            DiscountTypeToggle(
-                                selected = item.discountType,
-                                onSelect = { onUpdate(item.copy(discountType = it)) }
-                            )
+                        // Discount input with % / ₹ toggle (not for GST-inclusive custom amounts)
+                        if (!item.taxInclusive) {
+                            Row(
+                                modifier = Modifier.weight(1.3f),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AppTextField(
+                                    value = if (item.discountType == DiscountType.PERCENT) item.discountPercent else item.discountAmount,
+                                    onValueChange = {
+                                        if (item.discountType == DiscountType.PERCENT) {
+                                            onUpdate(item.copy(discountPercent = it))
+                                        } else {
+                                            onUpdate(item.copy(discountAmount = it))
+                                        }
+                                    },
+                                    label = if (item.discountType == DiscountType.PERCENT) "Disc %" else "Disc ₹",
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                DiscountTypeToggle(
+                                    selected = item.discountType,
+                                    onSelect = { onUpdate(item.copy(discountType = it)) }
+                                )
+                            }
                         }
                         AppTextField(
                             value = item.gstRate,

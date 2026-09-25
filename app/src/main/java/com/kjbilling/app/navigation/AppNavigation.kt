@@ -47,11 +47,14 @@ import com.kjbilling.app.ui.invoice.create.InvoiceCreateScreen
 import com.kjbilling.app.ui.invoice.create.InvoiceShareScreen
 import com.kjbilling.app.ui.invoice.detail.InvoiceDetailScreen
 import com.kjbilling.app.ui.invoice.history.InvoiceHistoryScreen
+import com.kjbilling.app.ui.khata.CustomerKhataScreen
+import com.kjbilling.app.ui.khata.KhataScreen
 import com.kjbilling.app.ui.onboarding.OnboardingScreen
 import com.kjbilling.app.ui.product.ProductFormScreen
 import com.kjbilling.app.ui.product.ProductListScreen
 import com.kjbilling.app.ui.settings.BusinessProfileScreen
 import com.kjbilling.app.ui.settings.SettingsScreen
+import com.kjbilling.app.ui.upi.UpiQrScreen
 import kotlinx.coroutines.flow.map
 
 sealed class Screen(val route: String) {
@@ -78,6 +81,11 @@ sealed class Screen(val route: String) {
     }
     object Settings : Screen("settings")
     object BusinessProfile : Screen("business_profile")
+    object UpiQr : Screen("upi_qr")
+    object Khata : Screen("khata")
+    object CustomerKhata : Screen("khata/{customerId}") {
+        fun createRoute(customerId: Long) = "khata/$customerId"
+    }
 }
 
 private data class BottomNavItem(
@@ -272,6 +280,8 @@ fun AppNavigation() {
                             "products" -> navController.navigate(Screen.ProductList.route)
                             "history", "invoice_history" -> navController.navigate(Screen.InvoiceHistory.route)
                             "settings" -> navController.navigate(Screen.Settings.route)
+                            "khata" -> navController.navigate(Screen.Khata.route)
+                            "upi_qr" -> navController.navigate(Screen.UpiQr.route)
                         }
                     }
                 )
@@ -287,7 +297,8 @@ fun AppNavigation() {
             composable(Screen.CustomerList.route) {
                 CustomerListScreen(
                     onNavigateToEdit = { id -> navController.navigate(Screen.CustomerForm.createRoute(id)) },
-                    onNavigateToAdd = { navController.navigate(Screen.CustomerForm.createRoute(null)) }
+                    onNavigateToAdd = { navController.navigate(Screen.CustomerForm.createRoute(null)) },
+                    onOpenKhata = { id -> navController.navigate(Screen.CustomerKhata.createRoute(id)) }
                 )
             }
 
@@ -385,7 +396,35 @@ fun AppNavigation() {
 
             composable(Screen.BusinessProfile.route) {
                 BusinessProfileScreen(
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    onPreviewUpiQr = { navController.navigate(Screen.UpiQr.route) }
+                )
+            }
+
+            composable(Screen.Khata.route) {
+                KhataScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenCustomer = { id -> navController.navigate(Screen.CustomerKhata.createRoute(id)) },
+                    onOpenInvoice = { id -> navController.navigate(Screen.InvoiceDetail.createRoute(id)) }
+                )
+            }
+
+            composable(
+                route = Screen.CustomerKhata.route,
+                arguments = listOf(navArgument("customerId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getLong("customerId") ?: return@composable
+                CustomerKhataScreen(
+                    customerId = id,
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenInvoice = { invoiceId -> navController.navigate(Screen.InvoiceDetail.createRoute(invoiceId)) }
+                )
+            }
+
+            composable(Screen.UpiQr.route) {
+                UpiQrScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenBusinessProfile = { navController.navigate(Screen.BusinessProfile.route) }
                 )
             }
         }

@@ -17,6 +17,7 @@ import com.kjbilling.app.domain.model.Product
 import com.kjbilling.app.ui.components.AppTextField
 import com.kjbilling.app.ui.components.MoneyInput
 import com.kjbilling.app.ui.components.PrimaryButton
+import com.kjbilling.app.ui.components.SectionCard
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,103 +88,109 @@ fun ProductFormScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            AppTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = "Product Name*",
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            MoneyInput(
-                value = sellingPriceStr,
-                onValueChange = { sellingPriceStr = it },
-                label = "Selling Price*",
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Using simple TextFields instead of dropdowns for simplicity,
-            // as standard ExposeDropdown is complex to write without full context.
-            // A simple implementation of dropdown using ExposedDropdownMenuBox:
-            var unitExpanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = unitExpanded,
-                onExpandedChange = { unitExpanded = !unitExpanded }
-            ) {
+            SectionCard(title = "Product details") {
                 AppTextField(
-                    value = unit,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = "Unit",
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitExpanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                    value = name,
+                    onValueChange = { name = it },
+                    label = "Product Name*",
+                    modifier = Modifier.fillMaxWidth()
                 )
-                ExposedDropdownMenu(
+
+                MoneyInput(
+                    value = sellingPriceStr,
+                    onValueChange = { sellingPriceStr = it },
+                    label = "Selling Price*",
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Using simple TextFields instead of dropdowns for simplicity,
+                // as standard ExposeDropdown is complex to write without full context.
+                // A simple implementation of dropdown using ExposedDropdownMenuBox:
+                var unitExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
                     expanded = unitExpanded,
-                    onDismissRequest = { unitExpanded = false }
+                    onExpandedChange = { unitExpanded = !unitExpanded }
                 ) {
-                    units.forEach { selectionOption ->
-                        DropdownMenuItem(
-                            text = { Text(selectionOption) },
-                            onClick = {
-                                unit = selectionOption
-                                unitExpanded = false
-                            }
-                        )
+                    AppTextField(
+                        value = unit,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = "Unit",
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = unitExpanded,
+                        onDismissRequest = { unitExpanded = false }
+                    ) {
+                        units.forEach { selectionOption ->
+                            DropdownMenuItem(
+                                text = { Text(selectionOption) },
+                                onClick = {
+                                    unit = selectionOption
+                                    unitExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }
 
-            var gstExpanded by remember { mutableStateOf(false) }
-            val currentGstDisplay = if (gstRateStr.isBlank()) "Use Default" else gstRateStr
-            ExposedDropdownMenuBox(
-                expanded = gstExpanded,
-                onExpandedChange = { gstExpanded = !gstExpanded }
-            ) {
-                AppTextField(
-                    value = currentGstDisplay,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = "GST Rate (%)",
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = gstExpanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
-                )
-                ExposedDropdownMenu(
+            SectionCard(title = "Tax") {
+                var gstExpanded by remember { mutableStateOf(false) }
+                val currentGstDisplay = if (gstRateStr.isBlank()) "Use Default" else gstRateStr
+                ExposedDropdownMenuBox(
                     expanded = gstExpanded,
-                    onDismissRequest = { gstExpanded = false }
+                    onExpandedChange = { gstExpanded = !gstExpanded }
                 ) {
-                    gstRates.forEach { selectionOption ->
-                        DropdownMenuItem(
-                            text = { Text(selectionOption) },
-                            onClick = {
-                                gstRateStr = if (selectionOption == "Use Default") "" else selectionOption
-                                gstExpanded = false
-                            }
-                        )
+                    AppTextField(
+                        value = currentGstDisplay,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = "GST Rate (%)",
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = gstExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = gstExpanded,
+                        onDismissRequest = { gstExpanded = false }
+                    ) {
+                        gstRates.forEach { selectionOption ->
+                            DropdownMenuItem(
+                                text = { Text(selectionOption) },
+                                onClick = {
+                                    gstRateStr = if (selectionOption == "Use Default") "" else selectionOption
+                                    gstExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
+
+                AppTextField(
+                    value = hsnCode,
+                    onValueChange = { hsnCode = it },
+                    label = "HSN Code",
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
-            AppTextField(
-                value = hsnCode,
-                onValueChange = { hsnCode = it },
-                label = "HSN Code",
-                modifier = Modifier.fillMaxWidth()
-            )
+            SectionCard(title = "Extra") {
+                AppTextField(
+                    value = sku,
+                    onValueChange = { sku = it },
+                    label = "SKU",
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            AppTextField(
-                value = sku,
-                onValueChange = { sku = it },
-                label = "SKU",
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            AppTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = "Description",
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = false
-            )
+                AppTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = "Description",
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = false
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 

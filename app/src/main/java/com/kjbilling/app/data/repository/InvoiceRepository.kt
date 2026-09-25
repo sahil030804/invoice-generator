@@ -9,8 +9,11 @@ import com.kjbilling.app.data.db.entity.InvoiceItemEntity
 import com.kjbilling.app.domain.model.Invoice
 import com.kjbilling.app.domain.model.InvoiceStatus
 import com.kjbilling.app.domain.model.PaymentMethod
-import com.kjbilling.app.domain.model.PaymentStatus
+import com.kjbilling.app.domain.insights.SoldItem
+import com.kjbilling.app.domain.khata.AllocationResult
+import com.kjbilling.app.domain.khata.KhataAllocator
 import com.kjbilling.app.domain.numbering.InvoiceNumbering
+import com.kjbilling.app.domain.payment.PaymentUpdate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.math.BigDecimal
@@ -52,13 +55,39 @@ class InvoiceRepository(
         invoiceDao.updateStatus(id, status)
     }
 
-    suspend fun updatePayment(
-        id: Long,
-        paymentStatus: PaymentStatus,
-        paymentMethod: PaymentMethod?,
-        amountPaid: BigDecimal
-    ) {
-        invoiceDao.updatePaymentInfo(id, paymentStatus, paymentMethod, amountPaid.toString())
+    fun observeSoldItemsSince(since: Long): Flow<List<SoldItem>> {
+        return invoiceDao.observeSoldItemsSince(since).map { rows ->
+            rows.map { SoldItem(it.productId, it.name, it.quantity, it.revenue, it.invoiceDate) }
+        }
+    }
+
+    fun observeByCustomer(customerId: Long): Flow<List<Invoice>> {
+        return invoiceDao.observeByCustomer(customerId).map { list -> list.map { it.toDomain() } }
+    }
+
+    /** Writes a [PaymentUpdate] from [PaymentRules] (status and payment together). */
+    suspend fun applyPayment(invoiceId: Long, update: PaymentUpdate, method: PaymentMethod?) {
+        invoiceDao.updatePaymentAndStatus(
+            id = invoiceId,
+            paymentStatus = update.paymentStatus,
+            paymentMethod = method,
+            amountPaid = update.amountPaid.toString(),
+            status = update.status,
+            updatedAt = System.currentTimeMillis()
+        )
+    }
+
+    /**
+     * Khata "Received": spreads [amount] over the customer's open bills, oldest first, atomically.
+     * Returns what was applied and any overpayment that had nowhere to go.
+     */
+    suspend fun receiveCustomerPayment(customerId: Long, amount: BigDecimal, method: PaymentMethod): AllocationResult {
+        return database.withTransaction {
+            val bills = invoiceDao.getNonCancelledByCustomer(customerId).map { it.toDomain() }
+            val result = KhataAllocator.allocate(bills, amount)
+            result.allocations.forEach { applyPayment(it.invoiceId, it.update, method) }
+            result
+        }
     }
 
     suspend fun deleteDraft(id: Long) {

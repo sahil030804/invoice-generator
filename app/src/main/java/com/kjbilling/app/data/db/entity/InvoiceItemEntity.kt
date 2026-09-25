@@ -1,5 +1,6 @@
 package com.kjbilling.app.data.db.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -41,7 +42,10 @@ data class InvoiceItemEntity(
     val igstAmount: BigDecimal?,
     val taxAmount: BigDecimal,
     val total: BigDecimal,
-    val sortOrder: Int
+    val sortOrder: Int,
+    // Custom Quick Bill amounts: the typed total already includes GST.
+    @ColumnInfo(defaultValue = "0")
+    val priceIncludesTax: Boolean = false
 ) {
     fun toDomain(): InvoiceItem {
         return InvoiceItem(
@@ -63,7 +67,8 @@ data class InvoiceItemEntity(
             igstAmount = igstAmount,
             taxAmount = taxAmount,
             total = total,
-            sortOrder = sortOrder
+            sortOrder = sortOrder,
+            priceIncludesTax = priceIncludesTax
         )
     }
 
@@ -88,7 +93,8 @@ data class InvoiceItemEntity(
                 igstAmount = domain.igstAmount,
                 taxAmount = domain.taxAmount,
                 total = domain.total,
-                sortOrder = domain.sortOrder
+                sortOrder = domain.sortOrder,
+                priceIncludesTax = domain.priceIncludesTax
             )
         }
     }

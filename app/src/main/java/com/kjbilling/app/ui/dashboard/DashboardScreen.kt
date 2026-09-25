@@ -4,8 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -27,7 +27,11 @@ import com.kjbilling.app.domain.model.Invoice
 import com.kjbilling.app.domain.model.InvoiceStatus
 import com.kjbilling.app.domain.model.PaymentStatus
 import androidx.compose.foundation.shape.CircleShape
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.kjbilling.app.data.backup.BackupShare
+import com.kjbilling.app.domain.insights.DateGrouping
 import com.kjbilling.app.ui.components.AppCard
+import com.kjbilling.app.ui.components.InitialsAvatar
 import com.kjbilling.app.ui.components.EmptyState
 import com.kjbilling.app.ui.components.StatusBadge
 import com.kjbilling.app.ui.components.statusToneFor
@@ -35,6 +39,7 @@ import com.kjbilling.app.ui.theme.Dimens
 import com.kjbilling.app.ui.theme.ext
 import com.kjbilling.app.ui.components.LoadingState
 import java.time.LocalTime
+import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,9 +49,16 @@ fun DashboardScreen(
     onNavigateToInvoiceDetail: (Long) -> Unit,
     onNavigate: (String) -> Unit
 ) {
+    val context = LocalContext.current
     val app = LocalContext.current.applicationContext as KJInvoiceApp
     val viewModel: DashboardViewModel = viewModel(factory = DashboardViewModel.factory(app.container))
     val state by viewModel.state.collectAsState()
+
+    // The backup status lives in prefs, so refresh it whenever the dashboard is shown again.
+    LifecycleResumeEffect(Unit) {
+        viewModel.refreshBackupStatus()
+        onPauseOrDispose { }
+    }
 
     Scaffold(
         topBar = {
@@ -82,27 +94,21 @@ fun DashboardScreen(
                 )
             )
         },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onNavigateToNewInvoice,
-                icon = { Icon(Icons.Filled.Add, "New Invoice") },
-                text = { Text("New Invoice", style = MaterialTheme.typography.labelLarge) },
-                containerColor = MaterialTheme.ext.action,
-                contentColor = MaterialTheme.ext.onAction
-            )
-        }
     ) { innerPadding ->
         if (state.isLoading) {
             LoadingState(modifier = Modifier.padding(innerPadding))
         } else {
-            LazyColumn(
+            // A plain scrolling Column (not LazyColumn): at most 10 recent rows, and every row is always
+            // composed, so screen readers and UI tests see the whole list.
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = Dimens.ScreenPadding),
                 verticalArrangement = Arrangement.spacedBy(Dimens.ListGap)
             ) {
-                item {
+                run {
                     Spacer(modifier = Modifier.height(8.dp))
                     Card(
                         onClick = onNavigateToQuickBill,
@@ -160,51 +166,90 @@ fun DashboardScreen(
                     }
                 }
 
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Dimens.ListGap)
-                    ) {
-                        StatCard(
-                            title = "Today's Sales",
-                            amount = CurrencyFormatter.format(state.todaysSales),
-                            modifier = Modifier.weight(1f)
-                        )
-                        StatCard(
-                            title = "Pending",
-                            amount = CurrencyFormatter.format(state.pendingAmount),
-                            modifier = Modifier.weight(1f),
-                            amountColor = MaterialTheme.ext.unpaid.text
-                        )
-                    }
+                // 2x2 shortcuts
+                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.ListGap), modifier = Modifier.fillMaxWidth()) {
+                    ActionTile(
+                        icon = Icons.Filled.Add,
+                        title = "New Invoice",
+                        subtitle = "Full GST invoice",
+                        iconDescription = "New Invoice",
+                        onClick = onNavigateToNewInvoice,
+                        modifier = Modifier.weight(1f)
+                    )
+                    ActionTile(
+                        icon = Icons.Filled.AccountBalanceWallet,
+                        title = "Khata",
+                        subtitle = if (state.customersOwing == 0) "All clear" else "${state.customersOwing} ${if (state.customersOwing == 1) "customer owes" else "customers owe"}",
+                        highlightSubtitle = state.customersOwing > 0,
+                        onClick = { onNavigate("khata") },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
-
-                item {
-                    Text(
-                        text = "Recent Invoices",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(top = Dimens.Md, bottom = Dimens.Xs)
+                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.ListGap), modifier = Modifier.fillMaxWidth()) {
+                    ActionTile(
+                        icon = Icons.Filled.QrCode2,
+                        title = "UPI QR",
+                        subtitle = "Scan to pay",
+                        onClick = { onNavigate("upi_qr") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ActionTile(
+                        icon = Icons.Filled.CloudUpload,
+                        title = "Backup",
+                        subtitle = state.backup.text,
+                        highlightSubtitle = state.backup.needsAttention,
+                        onClick = { viewModel.backupNow { file -> BackupShare.share(context, file) } },
+                        modifier = Modifier.weight(1f)
                     )
                 }
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.ListGap)
+                ) {
+                    StatCard(
+                        title = "Today's Sales",
+                        amount = CurrencyFormatter.format(state.todaysSales),
+                        modifier = Modifier.weight(1f)
+                    )
+                    StatCard(
+                        title = "Pending",
+                        amount = CurrencyFormatter.format(state.pendingAmount),
+                        modifier = Modifier.weight(1f),
+                        amountColor = MaterialTheme.ext.unpaid.text,
+                        onClick = { onNavigate("khata") }
+                    )
+                }
+
+                val insights = state.insights
+                if (insights != null && state.recentInvoices.isNotEmpty()) {
+                    WeekCard(insights)
+                }
+
+                Text(
+                    text = "Recent Invoices",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(top = Dimens.Md, bottom = Dimens.Xs)
+                )
+
                 if (state.recentInvoices.isEmpty()) {
-                    item {
-                        EmptyState(
-                            title = "No invoices yet",
-                            subtitle = "Create your first professional invoice in under a minute",
-                            modifier = Modifier.padding(vertical = 32.dp)
-                        )
-                    }
+                    EmptyState(
+                        title = "No invoices yet",
+                        subtitle = "Create your first professional invoice in under a minute",
+                        modifier = Modifier.padding(vertical = 32.dp)
+                    )
                 } else {
-                    items(state.recentInvoices) { invoice ->
-                        InvoiceCard(
-                            invoice = invoice,
-                            onClick = { onNavigateToInvoiceDetail(invoice.id) }
-                        )
+                    val now = System.currentTimeMillis()
+                    DateGrouping.groupByDay(state.recentInvoices, now, ZoneId.systemDefault()).forEach { group ->
+                        DayHeader(group.label)
+                        group.invoices.forEach { invoice ->
+                            InvoiceCard(
+                                invoice = invoice,
+                                onClick = { onNavigateToInvoiceDetail(invoice.id) }
+                            )
+                        }
                     }
-                    item {
-                        Spacer(modifier = Modifier.height(80.dp))
-                    }
+                    Spacer(modifier = Modifier.height(Dimens.Xl))
                 }
             }
         }
@@ -216,9 +261,10 @@ fun StatCard(
     title: String,
     amount: String,
     modifier: Modifier = Modifier,
-    amountColor: Color = MaterialTheme.colorScheme.onSurface
+    amountColor: Color = MaterialTheme.colorScheme.onSurface,
+    onClick: (() -> Unit)? = null
 ) {
-    AppCard(modifier = modifier) {
+    val content: @Composable ColumnScope.() -> Unit = {
         Column(
             modifier = Modifier.padding(Dimens.CardPadding)
         ) {
@@ -234,6 +280,11 @@ fun StatCard(
                 color = amountColor
             )
         }
+    }
+    if (onClick != null) {
+        AppCard(onClick = onClick, modifier = modifier, content = content)
+    } else {
+        AppCard(modifier = modifier, content = content)
     }
 }
 
@@ -251,9 +302,10 @@ fun InvoiceCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(Dimens.CardPadding),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(Dimens.Md),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            InitialsAvatar(invoice.customerName)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = invoice.invoiceNumber,
@@ -262,12 +314,6 @@ fun InvoiceCard(
                 Text(
                     text = invoice.customerName,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
-                        .format(java.util.Date(invoice.invoiceDate)),
-                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

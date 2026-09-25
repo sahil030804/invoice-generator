@@ -21,5 +21,7 @@ data class InvoiceItem(
     val igstAmount: BigDecimal? = null,
     val taxAmount: BigDecimal = BigDecimal.ZERO,
     val total: BigDecimal = BigDecimal.ZERO,
-    val sortOrder: Int = 0
+    val sortOrder: Int = 0,
+    /** True for GST-inclusive custom amounts: [total] is what the customer pays. */
+    val priceIncludesTax: Boolean = false
 )

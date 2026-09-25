@@ -9,6 +9,7 @@
     <!-- Needed for direct WhatsApp share on targetSdk 35 (package visibility). -->
     <queries>
         <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
         <intent>
             <action android:name="android.intent.action.SEND" />
             <data android:mimeType="application/pdf" />

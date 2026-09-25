@@ -19,13 +19,16 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kjbilling.app.KJInvoiceApp
 import com.kjbilling.app.domain.model.BusinessProfile
+import com.kjbilling.app.domain.upi.UpiPayment
 import com.kjbilling.app.ui.components.AppCard
 import com.kjbilling.app.ui.components.AppTextField
 import com.kjbilling.app.ui.components.PrimaryButton
+import com.kjbilling.app.ui.components.SectionCard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -42,7 +45,8 @@ val INDIAN_STATES = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BusinessProfileScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onPreviewUpiQr: () -> Unit = {}
 ) {
     val app = LocalContext.current.applicationContext as KJInvoiceApp
     val viewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(app.container))
@@ -57,6 +61,9 @@ fun BusinessProfileScreen(
     var email by remember(state.profile?.email) { mutableStateOf(state.profile?.email ?: "") }
     var city by remember(state.profile?.city) { mutableStateOf(state.profile?.city ?: "") }
     var pincode by remember(state.profile?.pincode) { mutableStateOf(state.profile?.pincode ?: "") }
+    var upiId by remember(state.profile?.upiId) { mutableStateOf(state.profile?.upiId ?: "") }
+    val normalizedUpi = UpiPayment.normalizeVpa(upiId)
+    val isUpiValid = normalizedUpi == null || UpiPayment.isValidVpa(normalizedUpi)
 
     Scaffold(
         topBar = {
@@ -85,7 +92,8 @@ fun BusinessProfileScreen(
                                     gstin = gstin,
                                     email = email,
                                     city = city,
-                                    pincode = pincode
+                                    pincode = pincode,
+                                    upiId = normalizedUpi
                                 )
                             )
                         } ?: run {
@@ -100,12 +108,14 @@ fun BusinessProfileScreen(
                                     gstin = gstin,
                                     email = email,
                                     city = city,
-                                    pincode = pincode
+                                    pincode = pincode,
+                                    upiId = normalizedUpi
                                 )
                             )
                         }
                         onNavigateBack()
                     },
+                    enabled = isUpiValid,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -121,76 +131,126 @@ fun BusinessProfileScreen(
         ) {
             LogoSection(viewModel)
 
-            AppTextField(
-                value = businessName,
-                onValueChange = { businessName = it },
-                label = "Business Name"
-            )
-            AppTextField(
-                value = ownerName,
-                onValueChange = { ownerName = it },
-                label = "Owner Name"
-            )
-            AppTextField(
-                value = mobile,
-                onValueChange = { mobile = it },
-                label = "Mobile"
-            )
-            AppTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = "Email"
-            )
-            AppTextField(
-                value = address,
-                onValueChange = { address = it },
-                label = "Address"
-            )
-            AppTextField(
-                value = city,
-                onValueChange = { city = it },
-                label = "City"
-            )
-            AppTextField(
-                value = pincode,
-                onValueChange = { pincode = it },
-                label = "Pincode"
-            )
-            
-            var expanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
-            ) {
+            SectionCard(title = "Business details") {
                 AppTextField(
-                    value = stateSelection,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = "State",
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.menuAnchor()
+                    value = businessName,
+                    onValueChange = { businessName = it },
+                    label = "Business Name"
                 )
-                ExposedDropdownMenu(
+                AppTextField(
+                    value = ownerName,
+                    onValueChange = { ownerName = it },
+                    label = "Owner Name"
+                )
+                AppTextField(
+                    value = mobile,
+                    onValueChange = { mobile = it },
+                    label = "Mobile"
+                )
+                AppTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = "Email"
+                )
+            }
+
+            SectionCard(title = "Shop address") {
+                AppTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = "Address"
+                )
+                AppTextField(
+                    value = city,
+                    onValueChange = { city = it },
+                    label = "City"
+                )
+                AppTextField(
+                    value = pincode,
+                    onValueChange = { pincode = it },
+                    label = "Pincode"
+                )
+            
+                var expanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onExpandedChange = { expanded = !expanded }
                 ) {
-                    INDIAN_STATES.forEach { selectionOption ->
-                        DropdownMenuItem(
-                            text = { Text(selectionOption) },
-                            onClick = {
-                                stateSelection = selectionOption
-                                expanded = false
-                            }
-                        )
+                    AppTextField(
+                        value = stateSelection,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = "State",
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        INDIAN_STATES.forEach { selectionOption ->
+                            DropdownMenuItem(
+                                text = { Text(selectionOption) },
+                                onClick = {
+                                    stateSelection = selectionOption
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }
 
-            AppTextField(
-                value = gstin,
-                onValueChange = { gstin = it },
-                label = "GSTIN"
-            )
+            SectionCard(title = "Tax") {
+                AppTextField(
+                    value = gstin,
+                    onValueChange = { gstin = it },
+                    label = "GSTIN"
+                )
+            }
+
+            SectionCard(title = "Payments") {
+                UpiIdField(
+                    value = upiId,
+                    onValueChange = { upiId = it },
+                    isValid = isUpiValid,
+                    canPreview = normalizedUpi != null && isUpiValid && normalizedUpi == state.profile?.upiId,
+                    onPreview = onPreviewUpiQr
+                )
+            }
+
+        }
+    }
+}
+
+/** UPI ID used for "Scan to pay" QR codes on bills. Optional; must look like name@handle when set. */
+@Composable
+private fun UpiIdField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    isValid: Boolean,
+    canPreview: Boolean,
+    onPreview: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        AppTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = "UPI ID",
+            placeholder = "yourshop@okaxis",
+            keyboardType = KeyboardType.Email,
+            isError = !isValid,
+            errorMessage = "Enter a valid UPI ID, like name@okaxis"
+        )
+        Text(
+            text = "Customers scan a QR on your bills to pay you instantly.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (canPreview) {
+            TextButton(onClick = onPreview) {
+                Text("Preview my UPI QR")
+            }
         }
     }
 }

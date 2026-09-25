@@ -23,18 +23,25 @@ import com.kjbilling.app.domain.model.Customer
 import com.kjbilling.app.ui.components.ConfirmationDialog
 import com.kjbilling.app.ui.components.EmptyState
 import com.kjbilling.app.ui.components.SearchBar
+import com.kjbilling.app.ui.components.InitialsAvatar
+import com.kjbilling.app.domain.formatter.CurrencyFormatter
+import com.kjbilling.app.ui.theme.ext
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerListScreen(
     onNavigateToEdit: (Long) -> Unit,
-    onNavigateToAdd: () -> Unit
+    onNavigateToAdd: () -> Unit,
+    onOpenKhata: (Long) -> Unit = {}
 ) {
     val app = LocalContext.current.applicationContext as KJInvoiceApp
     val viewModel: CustomerViewModel = viewModel(factory = CustomerViewModel.factory(app.container))
 
     val customers by viewModel.customers.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val filter by viewModel.filter.collectAsState()
+    val dues by viewModel.dues.collectAsState()
 
     var customerToDelete by remember { mutableStateOf<Customer?>(null) }
 
@@ -58,12 +65,32 @@ fun CustomerListScreen(
             SearchBar(
                 query = searchQuery,
                 onQueryChange = viewModel::onSearchQueryChange,
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
             )
+
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = Dimens.Sm),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.Sm)
+            ) {
+                FilterChip(
+                    selected = filter == CustomerFilter.ALL,
+                    onClick = { viewModel.setFilter(CustomerFilter.ALL) },
+                    label = { Text("All") }
+                )
+                FilterChip(
+                    selected = filter == CustomerFilter.WITH_DUES,
+                    onClick = { viewModel.setFilter(CustomerFilter.WITH_DUES) },
+                    label = { Text(if (dues.isEmpty()) "With dues" else "With dues (${dues.size})") }
+                )
+            }
 
             if (customers.isEmpty()) {
                 EmptyState(
-                    title = if (searchQuery.isNotBlank()) "No customers found" else "No customers yet",
+                    title = when {
+                        searchQuery.isNotBlank() -> "No customers found"
+                        filter == CustomerFilter.WITH_DUES -> "No pending dues"
+                        else -> "No customers yet"
+                    },
                     subtitle = if (searchQuery.isNotBlank()) null else "Add your first customer to get started",
                     modifier = Modifier.weight(1f)
                 )
@@ -76,7 +103,9 @@ fun CustomerListScreen(
                     items(customers, key = { it.id }) { customer ->
                         SwipeToDeleteCustomerCard(
                             customer = customer,
+                            due = dues[customer.id],
                             onClick = { onNavigateToEdit(customer.id) },
+                            onOpenKhata = { onOpenKhata(customer.id) },
                             onDelete = { customerToDelete = customer }
                         )
                     }
@@ -102,7 +131,9 @@ fun CustomerListScreen(
 @Composable
 fun SwipeToDeleteCustomerCard(
     customer: Customer,
+    due: BigDecimal?,
     onClick: () -> Unit,
+    onOpenKhata: () -> Unit,
     onDelete: () -> Unit
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
@@ -141,38 +172,62 @@ fun SwipeToDeleteCustomerCard(
                     .fillMaxWidth()
                     .clickable(onClick = onClick)
             ) {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(Dimens.CardPadding),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.Md)
                 ) {
-                    Text(
-                        text = customer.name,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    if (!customer.businessName.isNullOrBlank()) {
+                    InitialsAvatar(customer.name)
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = customer.businessName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = customer.name,
+                            style = MaterialTheme.typography.titleMedium
                         )
+                        if (!customer.businessName.isNullOrBlank()) {
+                            Text(
+                                text = customer.businessName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        val details = listOfNotNull(
+                            customer.mobile?.takeIf { it.isNotBlank() },
+                            customer.state?.takeIf { it.isNotBlank() }
+                        ).joinToString(" · ")
+                        if (details.isNotEmpty()) {
+                            Text(
+                                text = details,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                    if (!customer.mobile.isNullOrBlank()) {
-                        Text(
-                            text = customer.mobile,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    if (!customer.state.isNullOrBlank()) {
-                        Text(
-                            text = customer.state,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    if (due != null && due.signum() > 0) {
+                        DueBadge(amount = due, onClick = onOpenKhata)
                     }
                 }
             }
         }
     )
+}
+
+/** "₹1,250.00 due" — opens the customer's Khata (the row itself still opens Edit Customer). */
+@Composable
+private fun DueBadge(amount: BigDecimal, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.ext.unpaid.container,
+        contentColor = MaterialTheme.ext.unpaid.onContainer
+    ) {
+        Text(
+            text = "${CurrencyFormatter.format(amount)} due",
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier
+                .heightIn(min = Dimens.MinTouch)
+                .padding(horizontal = Dimens.Md, vertical = Dimens.Md)
+        )
+    }
 }

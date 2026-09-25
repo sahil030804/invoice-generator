@@ -89,6 +89,52 @@ class InvoiceCalculator {
         )
     }
 
+    /**
+     * GST-inclusive line: [amount] is exactly what the customer pays; GST is carved out of it.
+     *
+     *   ₹100 @18% → taxable 84.75 + CGST 7.63 + SGST 7.62 = 100.00
+     *
+     * The rounding remainder goes to tax (and SGST), so the parts always add back to [amount].
+     */
+    fun calculateInclusiveItem(
+        amount: BigDecimal,
+        gstRate: BigDecimal,
+        taxType: TaxType
+    ): InvoiceItemCalculation {
+        val total = amount.setScale(2, RoundingMode.HALF_UP)
+        val zero = BigDecimal.ZERO.setScale(2)
+        val hasTax = taxType != TaxType.NO_GST && gstRate.signum() > 0
+
+        val taxable = if (hasTax) {
+            total.multiply(HUNDRED).divide(HUNDRED.add(gstRate), 2, RoundingMode.HALF_UP)
+        } else {
+            total
+        }
+        val tax = total.subtract(taxable)
+
+        val (cgst, sgst, igst) = when {
+            !hasTax -> Triple(zero, zero, zero)
+            taxType == TaxType.IGST -> Triple(zero, zero, tax)
+            else -> {
+                val half = tax.divide(BigDecimal("2"), 2, RoundingMode.HALF_UP)
+                Triple(half, tax.subtract(half), zero)
+            }
+        }
+
+        return InvoiceItemCalculation(
+            itemAmount = taxable,
+            discountAmount = zero,
+            taxableAmount = taxable,
+            cgstAmount = cgst,
+            sgstAmount = sgst,
+            igstAmount = igst,
+            taxAmount = tax,
+            total = total,
+            gstRate = if (hasTax) gstRate else BigDecimal.ZERO,
+            taxType = taxType
+        )
+    }
+
     fun calculateInvoice(
         items: List<InvoiceItemCalculation>,
         overallDiscountPercent: BigDecimal = BigDecimal.ZERO,
@@ -223,5 +269,9 @@ class InvoiceCalculator {
         } else {
             TaxType.IGST
         }
+    }
+
+    private companion object {
+        val HUNDRED = BigDecimal("100")
     }
 }

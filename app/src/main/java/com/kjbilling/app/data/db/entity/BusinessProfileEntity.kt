@@ -17,6 +17,7 @@ data class BusinessProfileEntity(
     val email: String?,
     val city: String?,
     val pincode: String?,
+    val upiId: String? = null,
     val createdAt: Long,
     val updatedAt: Long
 ) {
@@ -32,6 +33,7 @@ data class BusinessProfileEntity(
             email = email,
             city = city,
             pincode = pincode,
+            upiId = upiId,
             createdAt = createdAt,
             updatedAt = updatedAt
         )
@@ -50,6 +52,7 @@ data class BusinessProfileEntity(
                 email = domain.email,
                 city = domain.city,
                 pincode = domain.pincode,
+                upiId = domain.upiId,
                 createdAt = domain.createdAt,
                 updatedAt = domain.updatedAt
             )

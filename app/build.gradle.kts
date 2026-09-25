@@ -28,8 +28,8 @@ android {
         applicationId = "com.kjbilling.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -75,6 +75,11 @@ android {
     room {
         schemaDirectory("$projectDir/schemas")
     }
+
+    // Exported Room schemas feed MigrationTestHelper in instrumented tests.
+    sourceSets {
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
 }
 
 dependencies {
@@ -103,6 +108,9 @@ dependencies {
     // Coroutines
     implementation(libs.coroutines.android)
 
+    // QR codes for UPI "Scan to pay"
+    implementation(libs.zxing.core)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
@@ -113,6 +121,7 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test:rules:1.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation(libs.room.testing)
     // Compose test manifest registers the component needed by createAndroidComposeRule
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
