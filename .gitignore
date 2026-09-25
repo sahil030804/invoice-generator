@@ -15,3 +15,8 @@ local.properties
 build/
 **/build/
 
+
+# Signing secrets never go in git
+*.jks
+*.keystore
+keystore.properties

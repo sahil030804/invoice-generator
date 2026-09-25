@@ -1,4 +1,4 @@
-# Invoice Generator (PrimeInvoice)
+# Parchi — Offline Billing & GST Invoices
 
 [![Android](https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026%2B)-3DDC84?style=flat&logo=android&logoColor=white)](https://android.com)
 [![Kotlin](https://img.shields.io/badge/Language-Kotlin%202.0-7F52FF?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org)
@@ -7,6 +7,14 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A modern, offline-first, GST-compliant billing and invoice generation application built natively for Android. Designed for speed, extreme ease of use, and zero-typing counter sales—empowering retail shopkeepers, wholesalers, and elderly users to generate, print, and share invoices in seconds.
+
+## Download
+
+**[⬇ Download Parchi for Android (latest APK)](https://github.com/sahil030804/invoice-generator/releases/latest)** — Android 8.0+, works fully offline.
+
+1. Open the link on your phone and tap **Parchi-vX.Y.Z.apk** under *Assets*.
+2. Open the downloaded file; allow **Install unknown apps** if Android asks.
+3. Back up regularly from **Settings → Data & Backup** — all data stays on your phone.
 
 ---
 
@@ -201,9 +209,8 @@ app/
 ## Setup & Build Instructions
 
 ### Prerequisites
-- Android Studio Ladybug (2024.2.1) or newer
 - JDK 17
-- Android SDK 35 (compileSdk 35, minSdk 26)
+- Android SDK 35 (compileSdk 35, minSdk 26) with `ANDROID_HOME` set — no Android Studio needed, everything builds with the Gradle wrapper
 
 ### Build and Run Tests
 ```bash
@@ -220,6 +227,16 @@ cd invoice-generator
 # Install directly to connected device
 ./gradlew installDebug
 ```
+
+### Release APK (signed)
+The signing key is **never** stored in git. Release builds read a properties file with
+`storeFile`, `storePassword`, `keyAlias`, `keyPassword` from `$KEYSTORE_PROPERTIES`
+(default `~/.android-keys/parchi-keystore.properties`); without it the release APK is unsigned.
+
+```bash
+./gradlew assembleRelease   # -> app/build/outputs/apk/release/app-release.apk
+```
+Publish it as `Parchi-vX.Y.Z.apk` on a GitHub Release. Every update must be signed with the same key.
 
 ---
 

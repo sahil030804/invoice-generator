@@ -1,9 +1,23 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
+}
+
+// Release signing: the keystore lives OUTSIDE the repo. Point KEYSTORE_PROPERTIES (env var) at a
+// properties file with storeFile/storePassword/keyAlias/keyPassword; defaults to
+// ~/.android-keys/parchi-keystore.properties. Without it, release builds are simply unsigned.
+val keystoreProps = Properties().apply {
+    val path = System.getenv("KEYSTORE_PROPERTIES")
+        ?: "${System.getProperty("user.home")}/.android-keys/parchi-keystore.properties"
+    val file = file(path)
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
 }
 
 android {
@@ -20,8 +34,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (keystoreProps.getProperty("storeFile") != null) {
+            create("release") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             // Polished sideload: keep R8 OFF until ProGuard is hardened + release-tested.
             // Thin rules (Room-only) + optimize + shrink broke PDFs/nav in audit.
             isMinifyEnabled = false
